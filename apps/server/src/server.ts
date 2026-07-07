@@ -4,6 +4,7 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireAuth, setSessionCookie, verifyPassword } from "./auth.js";
+import { autotrace } from "./autotrace.js";
 import type { Config } from "./config.js";
 import { runCode, type Language } from "./run.js";
 
@@ -70,6 +71,39 @@ export function buildApp(config: Config): FastifyInstance {
   // Lightweight session probe — lets the frontend skip the login screen when the
   // HttpOnly cookie from a previous visit is still valid.
   app.get("/api/session", { preHandler: requireAuth }, async () => ({ status: "ok" }));
+
+  // AI auto-trace: rewrite raw pasted code into tracer-instrumented code (Gemini).
+  // Output is untrusted — the client reviews it and it only runs in the sandbox.
+  app.post(
+    "/api/autotrace",
+    {
+      preHandler: requireAuth,
+      config: { rateLimit: { max: 5, timeWindow: "1 minute" } }, // LLM quota guard
+    },
+    async (req, reply) => {
+      const Body = z
+        .object({
+          language: z.literal("go"), // v1: Go only (tracer coverage is deepest there)
+          code: z.string().min(1).max(config.MAX_CODE_LENGTH),
+        })
+        .strict();
+      const parsed = Body.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ status: "error", error: "invalid_request" });
+
+      const outcome = await autotrace(parsed.data.code, config);
+      if (!outcome.ok) {
+        req.log.warn({ reason: outcome.error }, "autotrace failed");
+        const message =
+          outcome.error === "not_configured"
+            ? "AI auto-trace is not configured on this server (missing GEMINI_API_KEY)."
+            : outcome.error === "quota_exceeded"
+              ? "AI quota exceeded — try again in a minute."
+              : "AI auto-trace failed — try again or instrument manually.";
+        return reply.send({ status: "error", error: message });
+      }
+      return reply.send({ status: "ok", ...outcome.result });
+    },
+  );
 
   app.post("/api/logout", async (_req, reply) => {
     reply.clearCookie("auth", { path: "/" });

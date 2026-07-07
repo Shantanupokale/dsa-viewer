@@ -38,6 +38,30 @@ export async function runCode(body: RunRequest): Promise<RunResult> {
   return (await res.json()) as RunResult;
 }
 
+export interface AutotraceResponse {
+  status: "ok" | "error";
+  concept?: string;
+  plugin?: string;
+  code?: string;
+  error?: string;
+}
+
+/** POST /api/autotrace — AI rewrite of raw code into tracer-instrumented code. */
+export async function autotrace(language: string, code: string): Promise<AutotraceResponse> {
+  try {
+    const res = await fetch(`${API_BASE}/api/autotrace`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ language, code }),
+    });
+    if (res.status === 401) return { status: "error", error: "unauthorized" };
+    return (await res.json()) as AutotraceResponse;
+  } catch {
+    return { status: "error", error: "Could not reach the server." };
+  }
+}
+
 /** GET /api/session — true when the cookie from a previous visit is still valid. */
 export async function hasSession(): Promise<boolean> {
   try {

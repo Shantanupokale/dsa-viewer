@@ -1,6 +1,6 @@
 import { useEffect, useState, type ComponentType } from "react";
 import { recipeFor } from "./animation/animationEngine";
-import { hasSession, runCode, type RunResult } from "./api/runClient";
+import { autotrace, hasSession, runCode, type RunResult } from "./api/runClient";
 import { LoginGate } from "./auth/LoginGate";
 import { CodeEditor } from "./editor/CodeEditor";
 import { InputPanel } from "./editor/InputPanel";
@@ -10,7 +10,7 @@ import type { SceneProps } from "./plugins/types";
 import { CallStackPanel } from "./panels/CallStackPanel";
 import { VariablesPanel } from "./panels/VariablesPanel";
 import { algorithms, getAlgorithm, type Language } from "./registry/algorithms";
-import { getPlugin } from "./registry/plugins";
+import { getPlugin, pluginForEvents } from "./registry/plugins";
 
 const LANGUAGES: Array<{ id: Language; label: string }> = [
   { id: "go", label: "Go" },
@@ -41,6 +41,9 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
   const [input, setInput] = useState("");
   const [instrument, setInstrument] = useState(algo.instrument ?? false);
   const [running, setRunning] = useState(false);
+  const [tracing, setTracing] = useState(false);
+  const [concept, setConcept] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [result, setResult] = useState<RunResult | null>(null);
 
   const examples = algorithms.filter((a) => a.language === language);
@@ -81,8 +84,26 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
       return;
     }
     if (res.status === "success" && res.events && res.events.length > 0) {
-      const p = getPlugin(algo.primaryPlugin);
+      // Pick the renderer from the events themselves so pasted / AI-rewritten code
+      // animates correctly regardless of which example is selected.
+      const p = pluginForEvents(res.events) ?? getPlugin(algo.primaryPlugin);
       if (p) load(res.events, p);
+    }
+  }
+
+  async function aiTrace() {
+    setTracing(true);
+    setAiError(null);
+    setConcept(null);
+    const res = await autotrace(language, code);
+    setTracing(false);
+    if (res.status === "ok" && res.code) {
+      setCode(res.code); // review before running — nothing executes yet
+      setConcept(res.concept ?? null);
+      setInstrument(false); // already instrumented
+    } else {
+      if (res.error === "unauthorized") return onUnauth();
+      setAiError(res.error ?? "AI auto-trace failed.");
     }
   }
 
@@ -122,10 +143,23 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
             </option>
           ))}
         </select>
-        <button className="btn btn-primary" onClick={visualize} disabled={running}>
+        {language === "go" && (
+          <button className="btn" onClick={aiTrace} disabled={tracing || running} title="Rewrite raw code with tracer calls using AI">
+            {tracing ? "Tracing…" : "✨ AI auto-trace"}
+          </button>
+        )}
+        <button className="btn btn-primary" onClick={visualize} disabled={running || tracing}>
           {running ? "Running…" : "▶ Visualize"}
         </button>
       </header>
+      {concept && (
+        <div className="border-b border-slate-800 bg-slate-900/60 px-4 py-1.5 text-xs text-emerald-300">
+          Detected: <span className="font-semibold">{concept}</span> — review the rewritten code, then hit Visualize.
+        </div>
+      )}
+      {aiError && (
+        <div className="border-b border-slate-800 bg-red-950/40 px-4 py-1.5 text-xs text-red-300">{aiError}</div>
+      )}
 
       <main className="grid flex-1 grid-cols-1 gap-4 p-4 lg:grid-cols-2">
         {/* Left: editor + input */}

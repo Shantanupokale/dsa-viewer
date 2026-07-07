@@ -20,6 +20,10 @@ const EnvSchema = z.object({
   MAX_INPUT_LENGTH: z.coerce.number().int().positive().default(100_000),
   RUN_RATE_MAX: z.coerce.number().int().positive().default(20),
 
+  // Optional: enables POST /api/autotrace (AI rewrite via Gemini). Feature is
+  // disabled when absent. Loaded from env only — never shipped to the client.
+  GEMINI_API_KEY: z.string().min(10).optional(),
+
   // Comma-separated allow-list of origins. Both loopback spellings are allowed by
   // default — browsers treat localhost and 127.0.0.1 as different origins.
   CORS_ORIGIN: z
