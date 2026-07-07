@@ -82,6 +82,7 @@ To stop: press `Ctrl+C` in each terminal.
 | `docker: Cannot connect to the Docker daemon` | Docker Desktop isn't running. Start it, wait for it to be ready, retry. |
 | Visualize shows **"Compilation failed"** | Your Go code has a syntax error — the compiler message is shown in the panel. |
 | Login rejected | Password must match `APP_ACCESS_PASSWORD` in `apps/server/.env`. |
+| Browser console: **blocked by CORS policy** on `/api/login` | You opened the app via a different hostname than the server allows. Use **http://localhost:5173**, and if your `.env` has a `CORS_ORIGIN` line, delete it (the default allows both `localhost` and `127.0.0.1`). Restart the backend after changing `.env`. |
 
 ---
 

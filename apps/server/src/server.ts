@@ -40,7 +40,10 @@ export function buildApp(config: Config): FastifyInstance {
 
   // Plugins
   void app.register(cookie, { secret: config.COOKIE_SECRET });
-  void app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
+  void app.register(cors, {
+    origin: config.CORS_ORIGIN.split(",").map((o) => o.trim()), // strict allow-list, no wildcard
+    credentials: true,
+  });
   void app.register(rateLimit, { global: false });
 
   // --- Routes ---------------------------------------------------------------

@@ -20,7 +20,15 @@ const EnvSchema = z.object({
   MAX_INPUT_LENGTH: z.coerce.number().int().positive().default(100_000),
   RUN_RATE_MAX: z.coerce.number().int().positive().default(20),
 
-  CORS_ORIGIN: z.string().url().default("http://localhost:5173"),
+  // Comma-separated allow-list of origins. Both loopback spellings are allowed by
+  // default — browsers treat localhost and 127.0.0.1 as different origins.
+  CORS_ORIGIN: z
+    .string()
+    .default("http://localhost:5173,http://127.0.0.1:5173")
+    .refine(
+      (v) => v.split(",").every((o) => z.string().url().safeParse(o.trim()).success),
+      "CORS_ORIGIN must be a comma-separated list of valid URLs",
+    ),
 });
 
 export type Config = z.infer<typeof EnvSchema> & { isProd: boolean };
