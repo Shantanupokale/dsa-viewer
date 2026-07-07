@@ -1,0 +1,28 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# turbo
+.turbo/
+
+# env / secrets — never commit
+.env
+.env.*
+!.env.example
+
+# language build artifacts
+*.class
+tracer-*/prog
+packages/tracer-cpp/*.o
+
+# editor / os
+.DS_Store
+.vscode/
+.idea/
+*.log

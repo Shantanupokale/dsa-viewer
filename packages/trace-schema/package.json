@@ -1,0 +1,32 @@
+{
+  "name": "@dsa/trace-schema",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The single source of truth for TraceEvent shapes — zod validators shared by every tracer SDK, the Timeline Recorder, and the frontend.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "5.7.2",
+    "vitest": "4.1.10"
+  }
+}
