@@ -4,7 +4,7 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireAuth, setSessionCookie, verifyPassword } from "./auth.js";
-import { autotrace } from "./autotrace.js";
+import { autotrace, autotraceRepair } from "./autotrace.js";
 import type { Config } from "./config.js";
 import { runCode, type Language } from "./run.js";
 
@@ -90,16 +90,37 @@ export function buildApp(config: Config): FastifyInstance {
       const parsed = Body.safeParse(req.body);
       if (!parsed.success) return reply.code(400).send({ status: "error", error: "invalid_request" });
 
-      const outcome = await autotrace(parsed.data.code, config);
-      if (!outcome.ok) {
-        req.log.warn({ reason: outcome.error }, "autotrace failed");
+      const fail = (reason: string) => {
+        req.log.warn({ reason }, "autotrace failed");
         const message =
-          outcome.error === "not_configured"
+          reason === "not_configured"
             ? "AI auto-trace is not configured on this server (missing GEMINI_API_KEY)."
-            : outcome.error === "quota_exceeded"
+            : reason === "quota_exceeded"
               ? "AI quota exceeded — try again in a minute."
-              : "AI auto-trace failed — try again or instrument manually.";
+              : reason === "wont_compile"
+                ? "AI couldn't produce compiling code for this snippet — try again, or use the tracer API manually."
+                : "AI auto-trace failed — try again or instrument manually.";
         return reply.send({ status: "error", error: message });
+      };
+
+      let outcome = await autotrace(parsed.data.code, config);
+      if (!outcome.ok) return fail(outcome.error);
+
+      // Verify the model's code actually compiles (sandboxed run). One repair round
+      // with the real compiler errors fixes most hallucinated-signature mistakes.
+      let check = await runCode({ language: "go", code: outcome.result.code, input: "" }, config);
+      if (check.status === "compilation_failed") {
+        req.log.info("autotrace: first attempt failed to compile, repairing");
+        const repaired = await autotraceRepair(
+          parsed.data.code,
+          outcome.result.code,
+          check.error ?? "unknown compiler error",
+          config,
+        );
+        if (!repaired.ok) return fail(repaired.error);
+        check = await runCode({ language: "go", code: repaired.result.code, input: "" }, config);
+        if (check.status === "compilation_failed") return fail("wont_compile");
+        outcome = repaired;
       }
       return reply.send({ status: "ok", ...outcome.result });
     },

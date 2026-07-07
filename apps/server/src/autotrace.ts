@@ -40,36 +40,50 @@ const GeminiEnvelope = z.object({
 // The tracer API contract the model must target. Kept in one place so SDK additions
 // only need a prompt update.
 const TRACER_API_GO = `
-package tracer (import "dsaviz/tracer") — every call below emits visualization events:
+package tracer (import "dsaviz/tracer"). EXACT signatures — every value type is int,
+constructors return POINTERS, nothing returns interface{}:
 
 SEQUENCE
-  arr := tracer.NewArray("name", []int{...}); arr.Get(i); arr.Set(i, v); arr.Swap(i, j); arr.Len()
-  s := tracer.NewStack("name"); s.Push(v); s.Pop(); s.Peek(); s.Empty(); s.Len()
-  q := tracer.NewQueue("name"); q.Enqueue(v); q.Dequeue(); q.Peek(); q.Empty(); q.Len()
-  d := tracer.NewDeque("name"); d.PushFront(v); d.PushBack(v); d.PopFront(); d.PopBack(); d.Front(); d.Back(); d.Empty(); d.Len()
-  str := tracer.NewString("name", "text"); str.At(i); str.Compare(i, j); str.Len()
+  func NewArray(name string, initial []int) *Array   // POINTER already — never write &arr
+    (a *Array) Get(i int) int      // plain int — NEVER a type assertion like .(int)
+    (a *Array) Set(i int, v int)
+    (a *Array) Swap(i int, j int)
+    (a *Array) Len() int
+  func NewStack(name string) *Stack        — Push(v int); Pop() int; Peek() int; Empty() bool; Len() int
+  func NewQueue(name string) *Queue        — Enqueue(v int); Dequeue() int; Peek() int; Empty() bool; Len() int
+  func NewDeque(name string) *Deque        — PushFront/PushBack(v int); PopFront/PopBack() int; Front/Back() int; Empty() bool; Len() int
+  func NewString(name string, s string) *TracedString — At(i int) byte; Compare(i, j int) bool; Len() int
 
-LINKED LIST (node ids are strings returned by NewNode)
-  ll := tracer.NewLinkedList("name"); id := ll.NewNode(value); ll.SetNext(id, otherId) // "" for nil
-  ll.NextOf(id) // current next id, "" if none;  ll.Visit(id) // highlight traversal
+LINKED LIST — node ids are strings
+  func NewLinkedList(name string) *LinkedList
+    NewNode(value int) string; SetNext(nodeID string, targetID string) // "" means nil
+    NextOf(nodeID string) string; Visit(nodeID string)
 
 TREE / GRAPH
-  t := tracer.NewTree("name")  // hierarchical layout
-  g := tracer.NewGraph("name") // force layout
-  .AddNode(id, value) / .AddVertex(id) / .AddEdge(fromId, toId) / .Visit(id) / .TraverseEdge(fromId, toId)
+  func NewTree(name string) *Graph   // hierarchical layout
+  func NewGraph(name string) *Graph  // force layout
+    AddNode(id string, value int); AddVertex(id string); AddEdge(from, to string)
+    Visit(id string); TraverseEdge(from, to string)
 
 DP TABLE
-  dp := tracer.NewDPTable("name", rows, cols); dp.Get(r, c); dp.Set(r, c, v)
-  dp.SetWithDeps(r, c, v, []tracer.Cell{{Row: r2, Col: c2}}) // draws dependency arrows
+  func NewDPTable(name string, rows, cols int) *DPTable
+    Get(r, c int) int; Set(r, c, v int)
+    SetWithDeps(r, c, v int, deps []tracer.Cell)   // tracer.Cell{Row: r2, Col: c2}
 
 HEAP (min-heap; Push/Pop animate the sift automatically)
-  h := tracer.NewHeap("name"); h.Push(v); h.Pop(); h.Len(); h.Empty()
+  func NewHeap(name string) *Heap — Push(v int); Pop() int; Len() int; Empty() bool
 
 TRIE
-  tr := tracer.NewTrie("name"); tr.Insert("word"); tr.Search("word")
+  func NewTrie(name string) *Trie — Insert(word string); Search(word string) bool
 
 RECURSION (one line at the top of any recursive function — call stack animates)
   defer tracer.Enter("funcName", map[string]any{"arg": value})()
+
+COMMON MISTAKES — DO NOT MAKE THESE:
+- arr.Get(i).(int)          WRONG: Get returns int, not interface{} — no type assertion
+- &tracer.NewArray(...)     WRONG: constructors already return pointers
+- twoSum(&arr, ...)         WRONG when arr is already *tracer.Array — pass arr directly
+- values other than int in structures — the SDK is int-only; adapt or leave untraced
 `;
 
 function buildPrompt(code: string): string {
@@ -103,6 +117,39 @@ export type AutotraceOutcome =
   | { ok: false; error: "not_configured" | "upstream_error" | "quota_exceeded" | "bad_response" };
 
 export async function autotrace(code: string, config: Config): Promise<AutotraceOutcome> {
+  return callGemini(buildPrompt(code), config);
+}
+
+/** Second round: give the model its own broken output + compiler errors to fix. */
+export async function autotraceRepair(
+  originalCode: string,
+  brokenCode: string,
+  compilerErrors: string,
+  config: Config,
+): Promise<AutotraceOutcome> {
+  const prompt = `Your previous rewrite of a Go solution FAILED TO COMPILE. Fix it.
+
+TRACER SDK (the ONLY tracing API available):
+${TRACER_API_GO}
+
+ORIGINAL USER CODE:
+\`\`\`go
+${originalCode}
+\`\`\`
+
+YOUR PREVIOUS (BROKEN) OUTPUT:
+\`\`\`go
+${brokenCode}
+\`\`\`
+
+COMPILER ERRORS:
+${compilerErrors}
+
+Return the corrected, complete, compiling program in the same JSON shape as before.`;
+  return callGemini(prompt, config);
+}
+
+async function callGemini(prompt: string, config: Config): Promise<AutotraceOutcome> {
   if (!config.GEMINI_API_KEY) return { ok: false, error: "not_configured" };
 
   let response: Response;
@@ -116,7 +163,7 @@ export async function autotrace(code: string, config: Config): Promise<Autotrace
         "x-goog-api-key": config.GEMINI_API_KEY,
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: buildPrompt(code) }] }],
+        contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.2,
           responseMimeType: "application/json",
