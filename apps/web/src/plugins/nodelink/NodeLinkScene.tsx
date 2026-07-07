@@ -1,4 +1,6 @@
 import { motion } from "framer-motion";
+import { useMemo } from "react";
+import { forceLayout } from "../../layout/force";
 import { linearBounds, linearLayout, NODE_H, NODE_W, type Layout, type Point } from "../../layout/linear";
 import { treeLayout } from "../../layout/tree";
 import { tokens } from "../../theme/tokens";
@@ -14,23 +16,20 @@ import type { NodeLinkEdge, NodeLinkState } from "./state";
 export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
   const duration = Math.max(0.1, 0.4 / Math.max(0.25, speed));
 
+  // Recompute layout only when the structure (layout mode + nodes + edges) changes —
+  // not on every playback step. Keeps force simulation off the hot path during traversal.
+  const structureKey = `${state.layout}|${state.order.join(",")}|${state.edges.map((e) => `${e.from}>${e.to}`).join(",")}`;
+  const { layout, width, height } = useMemo<{ layout: Layout; width: number; height: number }>(() => {
+    if (state.order.length === 0) return { layout: {}, width: 0, height: 0 };
+    if (state.layout === "tree") return treeLayout(state.order, state.edges);
+    if (state.layout === "force") return forceLayout(state.order, state.edges);
+    const b = linearBounds(state.order.length);
+    return { layout: linearLayout(state.order), width: b.width, height: b.height };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [structureKey]);
+
   if (state.order.length === 0) {
     return <div className="text-sm text-slate-500">No structure yet — run a solution to begin.</div>;
-  }
-
-  let layout: Layout;
-  let width: number;
-  let height: number;
-  if (state.layout === "tree") {
-    const t = treeLayout(state.order, state.edges);
-    layout = t.layout;
-    width = t.width;
-    height = t.height;
-  } else {
-    layout = linearLayout(state.order);
-    const b = linearBounds(state.order.length);
-    width = b.width;
-    height = b.height;
   }
 
   // Edges to draw: linked-list pointers (linear) or structural edges (tree/graph).

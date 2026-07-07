@@ -346,6 +346,11 @@ func (g *Graph) AddNode(id string, value int) {
 	emit("graph_add_node", g.id, map[string]any{"nodeId": id, "value": value})
 }
 
+// AddVertex declares a node labeled by its id, with no value (emits graph_add_node).
+func (g *Graph) AddVertex(id string) {
+	emit("graph_add_node", g.id, map[string]any{"nodeId": id})
+}
+
 // AddEdge declares a structural edge from -> to (emits graph_add_edge).
 func (g *Graph) AddEdge(from, to string) {
 	emit("graph_add_edge", g.id, map[string]any{"fromNodeId": from, "toNodeId": to})

@@ -349,6 +349,40 @@ func main() {
 }
 `;
 
+const BFS_GO = `package main
+
+import "dsaviz/tracer"
+
+func main() {
+	g := tracer.NewGraph("graph")
+	for _, id := range []string{"A", "B", "C", "D", "E", "F"} {
+		g.AddVertex(id)
+	}
+	adj := map[string][]string{}
+	for _, e := range [][2]string{{"A", "B"}, {"A", "C"}, {"B", "D"}, {"C", "D"}, {"C", "E"}, {"D", "F"}, {"E", "F"}} {
+		g.AddEdge(e[0], e[1])
+		adj[e[0]] = append(adj[e[0]], e[1])
+		adj[e[1]] = append(adj[e[1]], e[0])
+	}
+
+	// Breadth-first search from A.
+	visited := map[string]bool{"A": true}
+	queue := []string{"A"}
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+		g.Visit(cur)
+		for _, nb := range adj[cur] {
+			if !visited[nb] {
+				visited[nb] = true
+				g.TraverseEdge(cur, nb)
+				queue = append(queue, nb)
+			}
+		}
+	}
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "reverse-linked-list",
@@ -373,6 +407,14 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "node-link",
     secondaryPanels: ["variables", "call-stack"],
     defaultCode: BST_INORDER_GO,
+  },
+  {
+    id: "bfs",
+    displayName: "Breadth-first search — graph (Go)",
+    language: "go",
+    primaryPlugin: "node-link",
+    secondaryPanels: ["variables"],
+    defaultCode: BFS_GO,
   },
   {
     id: "bubble-sort",
