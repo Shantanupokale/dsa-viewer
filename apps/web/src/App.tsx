@@ -23,6 +23,7 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
   const algo = getAlgorithm(algoId)!;
   const [code, setCode] = useState(algo.defaultCode);
   const [input, setInput] = useState("");
+  const [instrument, setInstrument] = useState(algo.instrument ?? false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
 
@@ -39,6 +40,7 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
     if (!next) return;
     setAlgoId(id);
     setCode(next.defaultCode);
+    setInstrument(next.instrument ?? false);
     setResult(null);
     reset();
   }
@@ -47,7 +49,7 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
     setRunning(true);
     setResult(null);
     reset();
-    const res = await runCode({ language: algo.language, code, input });
+    const res = await runCode({ language: algo.language, code, input, instrument });
     setResult(res);
     setRunning(false);
     if (res.status === "error" && res.error === "unauthorized") {
@@ -93,6 +95,17 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
           <div className="flex-1">
             <CodeEditor value={code} onChange={setCode} language={algo.language} />
           </div>
+          {algo.language === "go" && (
+            <label className="flex items-center gap-2 text-xs text-slate-400">
+              <input
+                type="checkbox"
+                className="accent-sky-500"
+                checked={instrument}
+                onChange={(e) => setInstrument(e.target.checked)}
+              />
+              Auto-instrument raw Go (rewrites plain []int usage into traced calls — no tracer code needed)
+            </label>
+          )}
           <InputPanel value={input} onChange={setInput} />
         </section>
 
@@ -117,6 +130,14 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
               <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">stdout</div>
               <pre className="overflow-x-auto whitespace-pre-wrap text-xs text-slate-300">{result.stdout}</pre>
             </div>
+          )}
+          {result?.instrumentedCode && (
+            <details className="rounded-lg border border-slate-800 bg-slate-900 p-3">
+              <summary className="cursor-pointer text-xs uppercase tracking-wide text-slate-500">
+                Instrumented code (what actually ran)
+              </summary>
+              <pre className="mt-2 overflow-x-auto text-xs text-slate-300">{result.instrumentedCode}</pre>
+            </details>
           )}
         </section>
       </main>

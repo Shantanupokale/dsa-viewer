@@ -12,6 +12,8 @@ export interface AlgorithmDescriptor {
   primaryPlugin: string;
   secondaryPanels: string[];
   defaultCode: string;
+  /** run with auto-instrumentation on by default (raw code, no tracer calls) */
+  instrument?: boolean;
 }
 
 const BUBBLE_SORT_GO = `package main
@@ -453,7 +455,36 @@ func main() {
 }
 `;
 
+const RAW_BUBBLE_GO = `package main
+
+import "fmt"
+
+// RAW Go — no tracer calls. Auto-instrumentation rewrites the []int usage
+// into traced operations before compiling. Write it like a normal solution.
+func main() {
+	nums := []int{5, 2, 9, 1, 5, 6}
+	n := len(nums)
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < n-1-i; j++ {
+			if nums[j] > nums[j+1] {
+				nums[j], nums[j+1] = nums[j+1], nums[j]
+			}
+		}
+	}
+	fmt.Println("sorted:", nums[0])
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
+  {
+    id: "raw-bubble-sort",
+    displayName: "★ Raw Go — bubble sort (auto-instrumented)",
+    language: "go",
+    primaryPlugin: "sequence",
+    secondaryPanels: ["variables"],
+    defaultCode: RAW_BUBBLE_GO,
+    instrument: true,
+  },
   {
     id: "reverse-linked-list",
     displayName: "Reverse linked list (Go)",

@@ -14,9 +14,10 @@ COPY packages/tracer-go /opt/dsaviz
 # Warm a build cache (stdlib + tracer) into /opt/gocache so runtime compiles seed
 # from it instead of recompiling the stdlib cold every run (15s -> ~2s). This also
 # sanity-compiles the SDK + example, failing the build if either is broken.
-RUN cd /opt/dsaviz/examples/bubblesort \
-    && GOCACHE=/opt/gocache go build -o /tmp/warm . \
+RUN cd /opt/dsaviz \
+    && GOCACHE=/opt/gocache go build -o /tmp/warm ./examples/bubblesort \
     && rm -f /tmp/warm \
+    && GOCACHE=/opt/gocache go build -o /usr/local/bin/dsaviz-rewrite ./cmd/rewrite \
     && chmod -R a+rX /opt/gocache
 
 # Compile + run entrypoint.

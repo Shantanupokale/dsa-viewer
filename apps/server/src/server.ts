@@ -15,6 +15,7 @@ function makeRunBody(config: Config) {
       language: z.enum(["go", "java", "cpp"]),
       code: z.string().min(1).max(config.MAX_CODE_LENGTH),
       input: z.string().max(config.MAX_INPUT_LENGTH).default(""),
+      instrument: z.boolean().default(false), // auto-instrument raw code (Go only)
     })
     .strict(); // reject unknown fields (mass-assignment guard)
 }
@@ -84,7 +85,10 @@ export function buildApp(config: Config): FastifyInstance {
         return reply.code(400).send({ status: "error", error: "invalid_request" });
       }
       try {
-        const result = await runCode(parsed.data as { language: Language; code: string; input: string }, config);
+        const result = await runCode(
+          parsed.data as { language: Language; code: string; input: string; instrument: boolean },
+          config,
+        );
         return reply.send(result); // always HTTP 200; status is in the body
       } catch (err) {
         req.log.error({ err }, "run failed");

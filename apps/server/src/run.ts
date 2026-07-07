@@ -17,6 +17,8 @@ export interface RunResult {
   stdout: string;
   durationMs: number;
   error?: string;
+  /** the auto-instrumented source, when the run was submitted with instrument=true */
+  instrumentedCode?: string;
 }
 
 export type Language = "go" | "java" | "cpp";
@@ -58,6 +60,27 @@ export interface RunInput {
   language: Language;
   code: string;
   input: string;
+  /** auto-instrument raw code via AST rewrite (Go only for now) */
+  instrument?: boolean;
+}
+
+/** Sentinel line carrying the base64 of the auto-instrumented source. */
+const INSTRUMENTED_PREFIX = "@INSTRUMENTED@";
+
+/** Pull the @INSTRUMENTED@ line out of raw stdout; return [restStdout, decodedSource]. */
+function extractInstrumented(rawStdout: string): [string, string | undefined] {
+  const lines = rawStdout.split("\n");
+  let source: string | undefined;
+  const rest = lines.filter((line) => {
+    if (!line.startsWith(INSTRUMENTED_PREFIX)) return true;
+    try {
+      source = Buffer.from(line.slice(INSTRUMENTED_PREFIX.length), "base64").toString("utf8");
+    } catch {
+      // malformed sentinel — drop the line, keep going
+    }
+    return false;
+  });
+  return [rest.join("\n"), source];
 }
 
 /**
@@ -76,9 +99,23 @@ export async function runCode(req: RunInput, config: Config): Promise<RunResult>
     };
   }
 
+  const files = lang.files(req.code, req.input);
+  if (req.instrument) {
+    if (req.language !== "go") {
+      return {
+        status: "internal_error",
+        events: [],
+        stdout: "",
+        durationMs: 0,
+        error: "Auto-instrumentation is currently supported for Go only.",
+      };
+    }
+    files["instrument"] = ""; // marker file the entrypoint checks for
+  }
+
   const sandbox = await runInSandbox({
     image: lang.image,
-    files: lang.files(req.code, req.input),
+    files,
     timeoutMs: config.RUN_TIMEOUT_MS,
     memoryBytes: MEMORY_BYTES,
     nanoCpus: NANO_CPUS,
@@ -86,7 +123,12 @@ export async function runCode(req: RunInput, config: Config): Promise<RunResult>
     maxOutputBytes: MAX_OUTPUT_BYTES,
   });
 
-  const { events, stdout } = record(sandbox.stdout);
+  const [rawStdout, instrumentedCode] = extractInstrumented(sandbox.stdout);
+  const { events, stdout } = record(rawStdout);
+
+  // Attach the instrumented source to every outcome that has it, so the UI can show
+  // what actually ran (or what failed to compile).
+  const extra = instrumentedCode !== undefined ? { instrumentedCode } : {};
 
   if (sandbox.timedOut) {
     return {
@@ -95,6 +137,7 @@ export async function runCode(req: RunInput, config: Config): Promise<RunResult>
       stdout,
       durationMs: sandbox.durationMs,
       error: `Execution exceeded the ${config.RUN_TIMEOUT_MS}ms limit and was terminated.`,
+      ...extra,
     };
   }
   if (sandbox.exitCode === COMPILE_FAILED_EXIT) {
@@ -104,6 +147,7 @@ export async function runCode(req: RunInput, config: Config): Promise<RunResult>
       stdout: "",
       durationMs: sandbox.durationMs,
       error: cleanCompilerError(sandbox.stderr),
+      ...extra,
     };
   }
   if (sandbox.exitCode !== 0) {
@@ -119,9 +163,10 @@ export async function runCode(req: RunInput, config: Config): Promise<RunResult>
       stdout,
       durationMs: sandbox.durationMs,
       error: truncate(sandbox.stderr.trim() || fallback),
+      ...extra,
     };
   }
-  return { status: "success", events, stdout, durationMs: sandbox.durationMs };
+  return { status: "success", events, stdout, durationMs: sandbox.durationMs, ...extra };
 }
 
 /** Strip the entrypoint's sentinel line and truncate to a sane length. */

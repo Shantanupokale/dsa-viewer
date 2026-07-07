@@ -192,6 +192,7 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 5a | Heap (`HeapScene`, sift swaps animate) + Trie (via node-link tree layout) | ✅ done |
 | 5b | Segment/Fenwick/sparse tree; Camera system if graphs get large | ⬜ |
 | M10 | Perf/safety verification — NFR1 + NFR3 benchmarked and enforced | ✅ done |
+| M11 | Auto-instrumentation (Go AST rewrite): paste RAW Go, `instrument:true` rewrites `[]int` usage into tracer calls in-sandbox | ✅ done (v1: int slices; append/range/aliased vars conservatively skipped) |
 | 6 | Session sharing; swap Explanation provider for LLM-backed | ⬜ |
 
 **Explanation Engine is deferred** — not in the critical path right now. Keep the

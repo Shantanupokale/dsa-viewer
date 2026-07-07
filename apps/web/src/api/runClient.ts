@@ -16,12 +16,14 @@ export interface RunResult {
   stdout?: string;
   durationMs?: number;
   error?: string;
+  instrumentedCode?: string;
 }
 
 export interface RunRequest {
   language: string;
   code: string;
   input: string;
+  instrument?: boolean;
 }
 
 /** POST /api/run. Sends the session cookie (credentials: include). */
