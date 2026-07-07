@@ -313,6 +313,42 @@ func main() {
 }
 `;
 
+const BST_INORDER_GO = `package main
+
+import "dsaviz/tracer"
+
+func main() {
+	t := tracer.NewTree("bst")
+
+	//         4
+	//       /   \\
+	//      2     6
+	//     / \\   / \\
+	//    1  3  5  7
+	vals := map[string]int{"4": 4, "2": 2, "6": 6, "1": 1, "3": 3, "5": 5, "7": 7}
+	for _, id := range []string{"4", "2", "6", "1", "3", "5", "7"} {
+		t.AddNode(id, vals[id])
+	}
+	for _, e := range [][2]string{{"4", "2"}, {"4", "6"}, {"2", "1"}, {"2", "3"}, {"6", "5"}, {"6", "7"}} {
+		t.AddEdge(e[0], e[1])
+	}
+
+	children := map[string][2]string{"4": {"2", "6"}, "2": {"1", "3"}, "6": {"5", "7"}}
+	var inorder func(id string)
+	inorder = func(id string) {
+		defer tracer.Enter("inorder", map[string]any{"node": id})()
+		if kids, ok := children[id]; ok {
+			inorder(kids[0])
+			t.Visit(id)
+			inorder(kids[1])
+		} else {
+			t.Visit(id)
+		}
+	}
+	inorder("4")
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "reverse-linked-list",
@@ -329,6 +365,14 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "sequence",
     secondaryPanels: ["variables", "call-stack"],
     defaultCode: FIB_MEMO_GO,
+  },
+  {
+    id: "bst-inorder",
+    displayName: "Binary tree — inorder traversal (Go)",
+    language: "go",
+    primaryPlugin: "node-link",
+    secondaryPanels: ["variables", "call-stack"],
+    defaultCode: BST_INORDER_GO,
   },
   {
     id: "bubble-sort",

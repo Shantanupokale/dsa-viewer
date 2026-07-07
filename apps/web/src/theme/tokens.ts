@@ -23,7 +23,8 @@ export const tokens = {
     stroke: "#475569", // slate-600
     text: "#e2e8f0", // slate-200
     visit: "#10b981", // emerald-500 — currently visiting
+    visited: "#0d9488", // teal-600 — already visited
     edge: "#64748b", // slate-500
-    edgeActive: "#f59e0b", // amber-500 — pointer just changed
+    edgeActive: "#f59e0b", // amber-500 — pointer/edge just changed
   },
 } as const;

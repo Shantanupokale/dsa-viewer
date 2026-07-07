@@ -69,6 +69,16 @@ function describe(e: TraceEvent): string {
       return `Set ${e.payload.nodeId}.next → ${e.payload.targetNodeId ?? "null"}.`;
     case "linkedlist_traverse":
       return `Visit node ${e.payload.nodeId}.`;
+    case "graph_init":
+      return `Create a ${e.payload.layout === "tree" ? "tree" : "graph"}.`;
+    case "graph_add_node":
+      return `Add node ${e.payload.nodeId}${e.payload.value !== undefined ? ` (value ${fmt(e.payload.value)})` : ""}.`;
+    case "graph_add_edge":
+      return `Add edge ${e.payload.fromNodeId} → ${e.payload.toNodeId}.`;
+    case "node_visit":
+      return `Visit node ${e.payload.nodeId}.`;
+    case "edge_traverse":
+      return `Traverse edge ${e.payload.fromNodeId} → ${e.payload.toNodeId}.`;
     case "call_push": {
       const args = Object.entries(e.payload.args).map(([k, v]) => `${k}=${fmt(v)}`).join(", ");
       return `Call ${e.payload.functionName}(${args}).`;

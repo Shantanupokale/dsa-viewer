@@ -181,7 +181,8 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 2a | Go `LinkedList` + `NodeLinkScene` + linear Layout Engine | ✅ done |
 | 2b | Go recursion auto-instrument (`tracer.Enter`) + CallStackPanel | ✅ done |
 | 2c | Java/C++ LinkedList + recursion parity | ⬜ |
-| 3 | Trees + Graphs (hierarchical + force-directed layouts) | ⬜ |
+| 3a | Trees — `Graph`/`Tree` tracer + hierarchical (d3-hierarchy) layout | ✅ done |
+| 3b | Graphs — force-directed (d3-force) layout + BFS/DFS | ⬜ next |
 | 4 | DP tables (`TableScene`, dependency arrows) | ⬜ |
 | 5 | Segment/Fenwick/sparse tree, trie, heap; Camera system if graphs get large | ⬜ |
 | 6 | Session sharing; swap Explanation provider for LLM-backed | ⬜ |

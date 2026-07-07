@@ -323,3 +323,40 @@ func Enter(funcName string, args map[string]any) func() {
 		emit("call_return", "callstack", map[string]any{"functionName": funcName, "returnValue": nil})
 	}
 }
+
+// Graph is a traced graph or tree. Declare nodes and edges up front, then use Visit /
+// TraverseEdge to animate a traversal. The layout hint ("force" or "tree") tells the
+// renderer whether to place nodes force-directed or hierarchically.
+type Graph struct{ id string }
+
+func newGraphLike(name, layout string, directed bool) *Graph {
+	g := &Graph{id: register(name)}
+	emit("graph_init", g.id, map[string]any{"directed": directed, "layout": layout})
+	return g
+}
+
+// NewGraph creates a directed graph rendered with a force-directed layout.
+func NewGraph(name string) *Graph { return newGraphLike(name, "force", true) }
+
+// NewTree creates a graph rendered with a hierarchical (tree) layout.
+func NewTree(name string) *Graph { return newGraphLike(name, "tree", true) }
+
+// AddNode declares a node with a value (emits graph_add_node).
+func (g *Graph) AddNode(id string, value int) {
+	emit("graph_add_node", g.id, map[string]any{"nodeId": id, "value": value})
+}
+
+// AddEdge declares a structural edge from -> to (emits graph_add_edge).
+func (g *Graph) AddEdge(from, to string) {
+	emit("graph_add_edge", g.id, map[string]any{"fromNodeId": from, "toNodeId": to})
+}
+
+// Visit highlights a node during traversal (emits node_visit).
+func (g *Graph) Visit(id string) {
+	emit("node_visit", g.id, map[string]any{"nodeId": id, "state": "visiting"})
+}
+
+// TraverseEdge highlights an edge during traversal (emits edge_traverse).
+func (g *Graph) TraverseEdge(from, to string) {
+	emit("edge_traverse", g.id, map[string]any{"fromNodeId": from, "toNodeId": to})
+}

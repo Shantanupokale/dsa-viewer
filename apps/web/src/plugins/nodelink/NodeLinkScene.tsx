@@ -1,14 +1,15 @@
 import { motion } from "framer-motion";
-import { linearBounds, linearLayout, NODE_H, NODE_W, type Point } from "../../layout/linear";
+import { linearBounds, linearLayout, NODE_H, NODE_W, type Layout, type Point } from "../../layout/linear";
+import { treeLayout } from "../../layout/tree";
 import { tokens } from "../../theme/tokens";
 import type { SceneProps } from "../types";
-import type { NodeLinkState } from "./state";
+import type { NodeLinkEdge, NodeLinkState } from "./state";
 
 /**
- * Node-link renderer (Phase 2: singly-linked list, linear layout). Nodes are placed in
- * creation order; `next` pointers are drawn as arrows (forward = straight, backward =
- * arc above, so a list reversal is visible). The visited node glows; the pointer that
- * just changed is drawn in amber.
+ * Node-link renderer. Linked lists use the linear layout (`next` arrows); trees/graphs
+ * use their structural `edges` with a hierarchical layout (force layout lands in M7b).
+ * Nodes animate to their positions; the visited path dims teal, the current node glows
+ * emerald, and the most-recently-changed pointer/edge is amber.
  */
 export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
   const duration = Math.max(0.1, 0.4 / Math.max(0.25, speed));
@@ -17,16 +18,35 @@ export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
     return <div className="text-sm text-slate-500">No structure yet — run a solution to begin.</div>;
   }
 
-  const layout = linearLayout(state.order);
-  const { width, height } = linearBounds(state.order.length);
+  let layout: Layout;
+  let width: number;
+  let height: number;
+  if (state.layout === "tree") {
+    const t = treeLayout(state.order, state.edges);
+    layout = t.layout;
+    width = t.width;
+    height = t.height;
+  } else {
+    layout = linearLayout(state.order);
+    const b = linearBounds(state.order.length);
+    width = b.width;
+    height = b.height;
+  }
 
-  const edges = state.order
-    .map((id) => ({ id, target: state.next[id] ?? null }))
-    .filter((e): e is { id: string; target: string } => e.target !== null && layout[e.target] !== undefined);
+  // Edges to draw: linked-list pointers (linear) or structural edges (tree/graph).
+  const edges: Array<NodeLinkEdge & { active: boolean }> =
+    state.layout === "linear"
+      ? state.order
+          .filter((id) => state.next[id])
+          .map((id) => ({ from: id, to: state.next[id]!, active: state.lastPointerFrom === id }))
+      : state.edges.map((e) => ({
+          ...e,
+          active: state.lastEdge?.from === e.from && state.lastEdge?.to === e.to,
+        }));
 
   return (
     <div className="w-full overflow-x-auto">
-      <svg width={width + 16} height={height} viewBox={`-8 0 ${width + 16} ${height}`} className="max-w-none">
+      <svg width={width + 16} height={height + 8} viewBox={`-8 -4 ${width + 16} ${height + 8}`} className="max-w-none">
         <defs>
           <marker id="nl-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
             <path d="M0,0 L8,4 L0,8 Z" fill={tokens.node.edge} />
@@ -36,12 +56,14 @@ export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
           </marker>
         </defs>
 
-        {edges.map(({ id, target }) => {
-          const active = state.lastPointerFrom === id;
+        {edges.map(({ from, to, active }) => {
+          const s = layout[from];
+          const t = layout[to];
+          if (!s || !t) return null;
           return (
             <path
-              key={id}
-              d={edgePath(layout[id]!, layout[target]!)}
+              key={`${from}->${to}`}
+              d={edgePath(s, t)}
               fill="none"
               stroke={active ? tokens.node.edgeActive : tokens.node.edge}
               strokeWidth={active ? 2.5 : 1.5}
@@ -51,25 +73,26 @@ export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
         })}
 
         {state.order.map((id) => {
-          const p = layout[id]!;
-          const node = state.nodes[id]!;
+          const p = layout[id];
+          const node = state.nodes[id];
+          if (!p || !node) return null;
           const visiting = state.visiting === id;
+          const visited = state.visited.includes(id);
+          const stroke = visiting ? tokens.node.visit : visited ? tokens.node.visited : tokens.node.stroke;
           return (
-            <g key={id} transform={`translate(${p.x} ${p.y})`}>
+            <motion.g
+              key={id}
+              initial={{ opacity: 0, x: p.x, y: p.y }}
+              animate={{ opacity: 1, x: p.x, y: p.y }}
+              transition={{ duration }}
+            >
               <motion.rect
                 width={NODE_W}
                 height={NODE_H}
                 rx={8}
                 fill={tokens.node.fill}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                  stroke: visiting ? tokens.node.visit : tokens.node.stroke,
-                  strokeWidth: visiting ? 3 : 1.5,
-                }}
+                animate={{ stroke, strokeWidth: visiting ? 3 : visited ? 2 : 1.5 }}
                 transition={{ duration }}
-                style={{ transformOrigin: `${NODE_W / 2}px ${NODE_H / 2}px` }}
               />
               <text
                 x={NODE_W / 2}
@@ -82,7 +105,7 @@ export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
               >
                 {formatValue(node.value)}
               </text>
-            </g>
+            </motion.g>
           );
         })}
       </svg>
@@ -91,20 +114,18 @@ export function NodeLinkScene({ state, speed }: SceneProps<NodeLinkState>) {
 }
 
 function edgePath(s: Point, t: Point): string {
-  if (t.x > s.x) {
-    // forward pointer — straight arrow, right edge to left edge
-    const x1 = s.x + NODE_W;
-    const y1 = s.y + NODE_H / 2;
-    return `M ${x1} ${y1} L ${t.x} ${t.y + NODE_H / 2}`;
+  if (Math.abs(s.y - t.y) < 4) {
+    // same row (linked list)
+    if (t.x > s.x) {
+      return `M ${s.x + NODE_W} ${s.y + NODE_H / 2} L ${t.x} ${t.y + NODE_H / 2}`;
+    }
+    const x1 = s.x + NODE_W / 2;
+    const x2 = t.x + NODE_W / 2;
+    const cy = Math.min(s.y, t.y) - 34;
+    return `M ${x1} ${s.y} Q ${(x1 + x2) / 2} ${cy} ${x2} ${t.y}`;
   }
-  // back pointer (e.g. after reversal) — arc above the row
-  const x1 = s.x + NODE_W / 2;
-  const y1 = s.y;
-  const x2 = t.x + NODE_W / 2;
-  const y2 = t.y;
-  const cx = (x1 + x2) / 2;
-  const cy = Math.min(y1, y2) - 34;
-  return `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+  // parent -> child (tree): bottom-center of source to top-center of target
+  return `M ${s.x + NODE_W / 2} ${s.y + NODE_H} L ${t.x + NODE_W / 2} ${t.y}`;
 }
 
 function formatValue(v: unknown): string {

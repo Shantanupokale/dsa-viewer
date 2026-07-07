@@ -115,7 +115,18 @@ const EVENTS = [
   event("linkedlist_delete", z.object({ nodeId: z.string().min(1) })),
   event("linkedlist_traverse", z.object({ nodeId: z.string().min(1) })),
 
-  event("graph_init", z.object({ directed: z.boolean().optional() })),
+  event("graph_init", z.object({
+    directed: z.boolean().optional(),
+    layout: z.enum(["force", "tree"]).optional(), // renderer layout hint (tree = hierarchical)
+    rootNodeId: z.string().min(1).optional(),
+  })),
+  // structural node/edge creation (carry the value + topology the layout needs)
+  event("graph_add_node", z.object({ nodeId: z.string().min(1), value: anyValue.optional() })),
+  event("graph_add_edge", z.object({
+    fromNodeId: z.string().min(1),
+    toNodeId: z.string().min(1),
+    weight: z.number().optional(),
+  })),
   event("node_visit", z.object({ nodeId: z.string().min(1), state: z.enum(["visiting", "visited"]) })),
   event("edge_traverse", z.object({
     fromNodeId: z.string().min(1),
