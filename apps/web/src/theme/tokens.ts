@@ -10,10 +10,12 @@ export const tokens = {
     read: "#0ea5e9", // sky-500  — being read
     write: "#f59e0b", // amber-500 — just written
     swap: "#a855f7", // purple-500 — swapping
+    active: "#10b981", // emerald-500 — just pushed/popped/enqueued/dequeued
   },
   glow: {
     read: "0 0 0 2px #0ea5e9, 0 0 16px #0ea5e955",
     write: "0 0 0 2px #f59e0b, 0 0 16px #f59e0b55",
     swap: "0 0 0 2px #a855f7, 0 0 16px #a855f755",
+    active: "0 0 0 2px #10b981, 0 0 16px #10b98155",
   },
 } as const;

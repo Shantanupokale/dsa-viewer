@@ -37,6 +37,30 @@ function describe(e: TraceEvent): string {
       return `Write ${fmt(e.payload.newValue)} at index ${e.payload.index} (was ${fmt(e.payload.oldValue)}).`;
     case "array_swap":
       return `Swap indices ${e.payload.indexA} and ${e.payload.indexB}.`;
+    case "string_init":
+      return `Initialize string of length ${e.payload.length}.`;
+    case "string_compare":
+      return `Compare index ${e.payload.indexA} ('${e.payload.charA}') with ${e.payload.indexB} ('${e.payload.charB}') → ${e.payload.isMatch ? "match" : "differ"}.`;
+    case "stack_push":
+      return `Push ${fmt(e.payload.value)} onto the stack.`;
+    case "stack_pop":
+      return `Pop ${fmt(e.payload.value)} off the stack.`;
+    case "stack_peek":
+      return `Peek top of stack (${fmt(e.payload.value)}).`;
+    case "queue_enqueue":
+      return `Enqueue ${fmt(e.payload.value)} at the rear.`;
+    case "queue_dequeue":
+      return `Dequeue ${fmt(e.payload.value)} from the front.`;
+    case "queue_peek":
+      return `Peek front of queue (${fmt(e.payload.value)}).`;
+    case "deque_push_front":
+      return `Push ${fmt(e.payload.value)} to the front.`;
+    case "deque_push_back":
+      return `Push ${fmt(e.payload.value)} to the back.`;
+    case "deque_pop_front":
+      return `Pop ${fmt(e.payload.value)} from the front.`;
+    case "deque_pop_back":
+      return `Pop ${fmt(e.payload.value)} from the back.`;
     default:
       return e.type;
   }

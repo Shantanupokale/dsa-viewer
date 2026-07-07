@@ -120,3 +120,132 @@ func (a *Array) Swap(i, j int) {
 func (a *Array) Len() int {
 	return len(a.data)
 }
+
+// Stack is a LIFO stack of ints. Push/Pop/Peek are visualized; the renderer draws
+// the top as the only open end.
+type Stack struct {
+	id   string
+	data []int
+}
+
+func NewStack(name string) *Stack { return &Stack{id: register(name)} }
+
+func (s *Stack) Push(v int) {
+	s.data = append(s.data, v)
+	emit("stack_push", s.id, map[string]any{"value": v})
+}
+
+func (s *Stack) Pop() int {
+	n := len(s.data)
+	v := s.data[n-1]
+	s.data = s.data[:n-1]
+	emit("stack_pop", s.id, map[string]any{"value": v})
+	return v
+}
+
+func (s *Stack) Peek() int {
+	v := s.data[len(s.data)-1]
+	emit("stack_peek", s.id, map[string]any{"value": v})
+	return v
+}
+
+func (s *Stack) Empty() bool { return len(s.data) == 0 }
+func (s *Stack) Len() int    { return len(s.data) }
+
+// Queue is a FIFO queue of ints: enqueue at the rear, dequeue at the front.
+type Queue struct {
+	id   string
+	data []int
+}
+
+func NewQueue(name string) *Queue { return &Queue{id: register(name)} }
+
+func (q *Queue) Enqueue(v int) {
+	q.data = append(q.data, v)
+	emit("queue_enqueue", q.id, map[string]any{"value": v})
+}
+
+func (q *Queue) Dequeue() int {
+	v := q.data[0]
+	q.data = q.data[1:]
+	emit("queue_dequeue", q.id, map[string]any{"value": v})
+	return v
+}
+
+func (q *Queue) Peek() int {
+	v := q.data[0]
+	emit("queue_peek", q.id, map[string]any{"value": v})
+	return v
+}
+
+func (q *Queue) Empty() bool { return len(q.data) == 0 }
+func (q *Queue) Len() int    { return len(q.data) }
+
+// Deque is a double-ended queue of ints: push/pop at either end.
+type Deque struct {
+	id   string
+	data []int
+}
+
+func NewDeque(name string) *Deque { return &Deque{id: register(name)} }
+
+func (d *Deque) PushFront(v int) {
+	d.data = append([]int{v}, d.data...)
+	emit("deque_push_front", d.id, map[string]any{"value": v})
+}
+
+func (d *Deque) PushBack(v int) {
+	d.data = append(d.data, v)
+	emit("deque_push_back", d.id, map[string]any{"value": v})
+}
+
+func (d *Deque) PopFront() int {
+	v := d.data[0]
+	d.data = d.data[1:]
+	emit("deque_pop_front", d.id, map[string]any{"value": v})
+	return v
+}
+
+func (d *Deque) PopBack() int {
+	n := len(d.data)
+	v := d.data[n-1]
+	d.data = d.data[:n-1]
+	emit("deque_pop_back", d.id, map[string]any{"value": v})
+	return v
+}
+
+// Front and Back read an end without mutating — pure metadata, no event.
+func (d *Deque) Front() int { return d.data[0] }
+func (d *Deque) Back() int  { return d.data[len(d.data)-1] }
+func (d *Deque) Empty() bool { return len(d.data) == 0 }
+func (d *Deque) Len() int    { return len(d.data) }
+
+// TracedString is a read-only string with two-pointer compare visualization.
+type TracedString struct {
+	id string
+	s  string
+}
+
+func NewString(name string, s string) *TracedString {
+	id := register(name)
+	emit("string_init", id, map[string]any{"length": len(s), "value": s})
+	return &TracedString{id: id, s: s}
+}
+
+// At returns the byte at i. Pure metadata — no event.
+func (t *TracedString) At(i int) byte { return t.s[i] }
+
+// Compare emits string_compare for indices i and j and returns whether they match.
+func (t *TracedString) Compare(i, j int) bool {
+	match := t.s[i] == t.s[j]
+	emit("string_compare", t.id, map[string]any{
+		"indexA": i,
+		"indexB": j,
+		"charA":  string(t.s[i]),
+		"charB":  string(t.s[j]),
+		"isMatch": match,
+	})
+	return match
+}
+
+func (t *TracedString) Len() int { return len(t.s) }
