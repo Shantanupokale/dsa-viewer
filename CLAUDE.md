@@ -1,7 +1,9 @@
-# CLAUDE.md — DSA Code Visualizer
+# CLAUDE.md
 
-Guidance for Claude Code (and humans) working in this repo. Read `PRD.md` and
-`ARCHITECTURE.md` for the full spec; this file is the working summary + house rules.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+**Project: DSA Code Visualizer.** Read `PRD.md` and `ARCHITECTURE.md` for the full spec;
+this file is the working summary + house rules.
 
 ## What this is
 
