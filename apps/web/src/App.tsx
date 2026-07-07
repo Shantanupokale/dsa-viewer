@@ -157,6 +157,17 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
           <PlayerControls />
           <VariablesPanel />
           {hasCalls && <CallStackPanel />}
+          {result?.status === "success" && (result.events?.length ?? 0) === 0 && (
+            <div className="rounded-lg border border-amber-900 bg-amber-950/40 p-3 text-sm">
+              <div className="font-semibold text-amber-300">Ran fine — but nothing to animate</div>
+              <p className="mt-1 text-xs text-amber-200/90">
+                The program produced no trace events. To visualize it, either declare structures with the tracer
+                types (<code>tracer.NewArray</code>, <code>tracer.NewStack</code>, <code>tracer.NewQueue</code>, …), or —
+                for plain <code>[]int</code> array code — tick “Auto-instrument raw Go”. Custom types and code using{" "}
+                <code>append</code>/slicing can’t be auto-traced yet.
+              </p>
+            </div>
+          )}
           {result && result.status !== "success" && (
             <div className="rounded-lg border border-red-900 bg-red-950/50 p-3 text-sm">
               <div className="font-semibold text-red-300">{statusLabel(result.status)}</div>
