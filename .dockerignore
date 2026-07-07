@@ -8,6 +8,4 @@ node_modules
 apps
 infra
 packages/trace-schema
-packages/tracer-java
-packages/tracer-cpp
 *.md

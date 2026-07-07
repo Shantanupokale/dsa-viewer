@@ -76,10 +76,10 @@ dsa-visualizer/
     server/         ✅ Fastify orchestrator, POST /api/run + /api/login
   packages/
     trace-schema/   ✅ TS types + zod validators (the contract)
-    tracer-go/      ✅ Go tracer SDK — Array (Phase 0)
-    tracer-java/    Java tracer SDK (Phase 1)                  — placeholder
-    tracer-cpp/     C++ header-only tracer SDK (Phase 1)       — placeholder
-  docker/           ✅ go.Dockerfile (java/cpp: Phase 1)
+    tracer-go/      ✅ Go tracer SDK — Array + Stack/Queue/Deque/String
+    tracer-java/    ✅ Java tracer SDK (package dsaviz) — same sequence family
+    tracer-cpp/     C++ header-only tracer SDK (Phase 1c)      — placeholder
+  docker/           ✅ go.Dockerfile + java.Dockerfile (cpp: Phase 1c)
   infra/            fly.toml etc. (later)                      — placeholder
   PRD.md            product requirements (authoritative)
   ARCHITECTURE.md   architecture blueprint (read first)
@@ -121,9 +121,10 @@ tool over pulling a heavy transitive chain.
 Requires Docker running.
 
 ```bash
-# One-time: install deps + build the Go sandbox image (Docker must be running)
+# One-time: install deps + build the sandbox images (Docker must be running)
 npm install
-docker build -f docker/go.Dockerfile -t dsa-run-go:0.1.0 .
+docker build -f docker/go.Dockerfile   -t dsa-run-go:0.1.0   .
+docker build -f docker/java.Dockerfile -t dsa-run-java:0.1.0 .   # Java solutions: class MUST be named Main
 
 # Build the packages the apps import
 npm run build -w @dsa/trace-schema -w @dsa/server
@@ -173,7 +174,9 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 |---|---|---|
 | — | Monorepo scaffold + `@dsa/trace-schema` (zod union + 100 tests) | ✅ done |
 | 0 | Go `Array` tracer + `go.Dockerfile` + server `/api/run` + `SequenceScene` (arrays) + Zustand player — one language, end to end | ✅ done |
-| 1 | Java + C++ Array parity; Stack/Queue/Deque/String; extend `SequenceScene` | ⬜ next |
+| 1a | Go sequence family (stack/queue/deque/string) + multi-structure scene | ✅ done |
+| 1b | Java tracer (`package dsaviz`) + `java.Dockerfile` + `language:"java"` | ✅ done |
+| 1c | C++ header-only tracer + `cpp.Dockerfile` + `language:"cpp"` | ⬜ next |
 | 2 | LinkedList + `NodeLinkScene` + Layout Engine; recursion auto-instrumentation + CallStackPanel | ⬜ |
 | 3 | Trees + Graphs (hierarchical + force-directed layouts) | ⬜ |
 | 4 | DP tables (`TableScene`, dependency arrows) | ⬜ |

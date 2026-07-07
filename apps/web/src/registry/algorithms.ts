@@ -192,6 +192,45 @@ func readInts(r *os.File) []int {
 }
 `;
 
+const BUBBLE_SORT_JAVA = `import dsaviz.*;
+
+// The class MUST be named Main.
+public class Main {
+    public static void main(String[] args) {
+        int[] nums = {5, 2, 9, 1, 5, 6};
+        Array arr = new Array("nums", nums);
+        int n = arr.len();
+        for (int i = 0; i < n - 1; i++) {
+            for (int j = 0; j < n - 1 - i; j++) {
+                if (arr.get(j) > arr.get(j + 1)) {
+                    arr.swap(j, j + 1);
+                }
+            }
+        }
+        System.out.println("done");
+    }
+}
+`;
+
+const NEXT_GREATER_JAVA = `import dsaviz.*;
+
+public class Main {
+    public static void main(String[] args) {
+        int[] nums = {2, 1, 5, 3, 6, 4};
+        Array arr = new Array("nums", nums);
+        Stack stack = new Stack("stack");
+        for (int i = 0; i < arr.len(); i++) {
+            int x = arr.get(i);
+            while (!stack.empty() && stack.peek() < x) {
+                stack.pop();
+            }
+            stack.push(x);
+        }
+        System.out.println("done");
+    }
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "bubble-sort",
@@ -232,6 +271,22 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "sequence",
     secondaryPanels: ["variables"],
     defaultCode: SLIDING_WINDOW_GO,
+  },
+  {
+    id: "bubble-sort-java",
+    displayName: "Bubble sort (Java)",
+    language: "java",
+    primaryPlugin: "sequence",
+    secondaryPanels: ["variables"],
+    defaultCode: BUBBLE_SORT_JAVA,
+  },
+  {
+    id: "next-greater-element-java",
+    displayName: "Next greater element — stack (Java)",
+    language: "java",
+    primaryPlugin: "sequence",
+    secondaryPanels: ["variables"],
+    defaultCode: NEXT_GREATER_JAVA,
   },
 ];
 
