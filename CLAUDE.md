@@ -121,24 +121,29 @@ tool over pulling a heavy transitive chain.
 Requires Docker running.
 
 ```bash
-# 1. Build the Go sandbox image (once, or after tracer-go / Dockerfile changes)
+# One-time: install deps + build the Go sandbox image (Docker must be running)
+npm install
 docker build -f docker/go.Dockerfile -t dsa-run-go:0.1.0 .
 
-# 2. Build the workspace packages the server/web import
-npm run build -w @dsa/trace-schema
-npm run build -w @dsa/server
+# Build the packages the apps import
+npm run build -w @dsa/trace-schema -w @dsa/server
 
-# 3. Start the API (needs two secrets in the environment; never hardcode)
-APP_ACCESS_PASSWORD='choose-a-password' \
-COOKIE_SECRET="$(node -e 'console.log(require(\"crypto\").randomBytes(32).toString(\"hex\"))')" \
-  npm start -w @dsa/server            # -> http://localhost:8080
+# Secrets: the server auto-loads apps/server/.env (node --env-file-if-exists).
+# Create it once — set your own values:
+cp apps/server/.env.example apps/server/.env
+node -e "console.log('COOKIE_SECRET=' + require('crypto').randomBytes(32).toString('hex'))" >> apps/server/.env
+# then edit apps/server/.env so APP_ACCESS_PASSWORD is a password you choose.
 
-# 4. Start the frontend (separate terminal)
-npm run dev -w @dsa/web               # -> http://localhost:5173
+# Start the API
+npm start -w @dsa/server               # -> http://localhost:8080
+
+# Start the frontend (separate terminal)
+npm run dev -w @dsa/web                # -> http://localhost:5173
 ```
 
 Then open http://localhost:5173, enter the password, pick "Bubble sort", click Visualize.
-`apps/server/.env.example` documents all env vars; copy it to `.env` for real use.
+Note: the server reads env only from `apps/server/.env` (or the real environment) — there
+is no other config file.
 
 ## The contract, concretely
 
