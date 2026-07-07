@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background: #020617; /* slate-950 */
+  color: #e2e8f0; /* slate-200 */
+}
+
+.btn {
+  @apply rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm text-slate-200 transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+.btn-primary {
+  @apply border-sky-600 bg-sky-600 text-white hover:bg-sky-500;
+}

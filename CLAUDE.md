@@ -70,18 +70,26 @@ tracer SDK (runs in-process inside the sandbox)
 ```
 dsa-visualizer/
   apps/
-    web/            React frontend (Phase 0+)                  — placeholder
-    server/         Fastify orchestrator, POST /api/run (P0+)  — placeholder
+    web/            ✅ React frontend — editor, player, SequenceScene (arrays)
+    server/         ✅ Fastify orchestrator, POST /api/run + /api/login
   packages/
-    trace-schema/   ✅ BUILT — TS types + zod validators (the contract)
-    tracer-go/      Go tracer SDK (Phase 0)                    — placeholder
+    trace-schema/   ✅ TS types + zod validators (the contract)
+    tracer-go/      ✅ Go tracer SDK — Array (Phase 0)
     tracer-java/    Java tracer SDK (Phase 1)                  — placeholder
     tracer-cpp/     C++ header-only tracer SDK (Phase 1)       — placeholder
-  docker/           go/java/cpp Dockerfiles (Phase 0+)         — placeholder
+  docker/           ✅ go.Dockerfile (java/cpp: Phase 1)
   infra/            fly.toml etc. (later)                      — placeholder
   PRD.md            product requirements (authoritative)
   ARCHITECTURE.md   architecture blueprint (read first)
 ```
+
+Phase-0 notes worth knowing:
+- **Editor is a plain textarea, not Monaco** — Monaco's value is highlighting `codeLine`,
+  which the tracer doesn't emit yet. Deferred (it also dragged a DOMPurify CVE chain).
+- **The Go image bakes a warm build cache** at `/opt/gocache`; the entrypoint seeds tmpfs
+  from it so a run compiles in ~0.5s instead of ~15s cold.
+- **`uuid` is pinned via a root `overrides`** to clear a dockerode-transitive advisory.
+  Keep `npm audit` at 0.
 
 ## Commands
 
@@ -105,6 +113,30 @@ npm run typecheck -w @dsa/trace-schema
 `@dsa/trace-schema` builds with plain `tsc` (no bundler) and tests with `vitest`.
 Keep the dependency tree lean and audit-clean (`npm audit` → 0 vulns); prefer dropping a
 tool over pulling a heavy transitive chain.
+
+### Run locally (Phase 0)
+
+Requires Docker running.
+
+```bash
+# 1. Build the Go sandbox image (once, or after tracer-go / Dockerfile changes)
+docker build -f docker/go.Dockerfile -t dsa-run-go:0.1.0 .
+
+# 2. Build the workspace packages the server/web import
+npm run build -w @dsa/trace-schema
+npm run build -w @dsa/server
+
+# 3. Start the API (needs two secrets in the environment; never hardcode)
+APP_ACCESS_PASSWORD='choose-a-password' \
+COOKIE_SECRET="$(node -e 'console.log(require(\"crypto\").randomBytes(32).toString(\"hex\"))')" \
+  npm start -w @dsa/server            # -> http://localhost:8080
+
+# 4. Start the frontend (separate terminal)
+npm run dev -w @dsa/web               # -> http://localhost:5173
+```
+
+Then open http://localhost:5173, enter the password, pick "Bubble sort", click Visualize.
+`apps/server/.env.example` documents all env vars; copy it to `.env` for real use.
 
 ## The contract, concretely
 
@@ -133,8 +165,8 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | Phase | Deliverable | Status |
 |---|---|---|
 | — | Monorepo scaffold + `@dsa/trace-schema` (zod union + 100 tests) | ✅ done |
-| 0 | Go `Array` tracer + `go.Dockerfile` + server `/api/run` + `SequenceScene` (arrays) + Zustand player — one language, end to end | ⬜ next |
-| 1 | Java + C++ Array parity; Stack/Queue/Deque/String; extend `SequenceScene` | ⬜ |
+| 0 | Go `Array` tracer + `go.Dockerfile` + server `/api/run` + `SequenceScene` (arrays) + Zustand player — one language, end to end | ✅ done |
+| 1 | Java + C++ Array parity; Stack/Queue/Deque/String; extend `SequenceScene` | ⬜ next |
 | 2 | LinkedList + `NodeLinkScene` + Layout Engine; recursion auto-instrumentation + CallStackPanel | ⬜ |
 | 3 | Trees + Graphs (hierarchical + force-directed layouts) | ⬜ |
 | 4 | DP tables (`TableScene`, dependency arrows) | ⬜ |

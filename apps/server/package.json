@@ -1,0 +1,31 @@
+{
+  "name": "@dsa/server",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Fastify orchestrator: POST /api/run compiles + runs tracer-instrumented code in an ephemeral Docker sandbox and returns a validated TraceEvent stream.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "npm run build && node --watch dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist coverage"
+  },
+  "dependencies": {
+    "@dsa/trace-schema": "*",
+    "@fastify/cookie": "^11.0.2",
+    "@fastify/cors": "^10.0.2",
+    "@fastify/rate-limit": "^10.2.2",
+    "dockerode": "^4.0.2",
+    "fastify": "^5.2.1",
+    "zod": "3.24.1"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.31",
+    "@types/node": "^20.17.10",
+    "typescript": "5.7.2",
+    "vitest": "4.1.10"
+  }
+}
