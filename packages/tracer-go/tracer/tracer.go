@@ -249,3 +249,51 @@ func (t *TracedString) Compare(i, j int) bool {
 }
 
 func (t *TracedString) Len() int { return len(t.s) }
+
+// LinkedList is a traced singly-linked list. Node creation and next-pointer updates
+// are visualized; the renderer draws nodes with pointer arrows. Node ids are assigned
+// by the SDK (NewNode returns one); the user threads them through SetNext/Visit.
+type LinkedList struct {
+	id    string
+	count int
+	next  map[string]string
+}
+
+func NewLinkedList(name string) *LinkedList {
+	l := &LinkedList{id: register(name), next: map[string]string{}}
+	emit("linkedlist_init", l.id, map[string]any{"doubly": false})
+	return l
+}
+
+// NewNode creates a node holding value and returns its id (emits linkedlist_node_create).
+func (l *LinkedList) NewNode(value int) string {
+	nodeID := fmt.Sprintf("%s_n%d", l.id, l.count)
+	l.count++
+	emit("linkedlist_node_create", l.id, map[string]any{"nodeId": nodeID, "value": value})
+	return nodeID
+}
+
+// SetNext points nodeId.next at targetID, or at nil when targetID is "" (emits
+// linkedlist_pointer_update).
+func (l *LinkedList) SetNext(nodeID, targetID string) {
+	var target any = nil
+	if targetID != "" {
+		target = targetID
+		l.next[nodeID] = targetID
+	} else {
+		delete(l.next, nodeID)
+	}
+	emit("linkedlist_pointer_update", l.id, map[string]any{
+		"nodeId":       nodeID,
+		"pointerName":  "next",
+		"targetNodeId": target,
+	})
+}
+
+// NextOf returns the current next id ("" if none). Pure metadata — no event.
+func (l *LinkedList) NextOf(nodeID string) string { return l.next[nodeID] }
+
+// Visit highlights nodeId as the current traversal position (emits linkedlist_traverse).
+func (l *LinkedList) Visit(nodeID string) {
+	emit("linkedlist_traverse", l.id, map[string]any{"nodeId": nodeID})
+}

@@ -61,6 +61,14 @@ function describe(e: TraceEvent): string {
       return `Pop ${fmt(e.payload.value)} from the front.`;
     case "deque_pop_back":
       return `Pop ${fmt(e.payload.value)} from the back.`;
+    case "linkedlist_init":
+      return `Create a linked list.`;
+    case "linkedlist_node_create":
+      return `Create node ${e.payload.nodeId} (value ${fmt(e.payload.value)}).`;
+    case "linkedlist_pointer_update":
+      return `Set ${e.payload.nodeId}.next → ${e.payload.targetNodeId ?? "null"}.`;
+    case "linkedlist_traverse":
+      return `Visit node ${e.payload.nodeId}.`;
     default:
       return e.type;
   }

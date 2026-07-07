@@ -18,4 +18,12 @@ export const tokens = {
     swap: "0 0 0 2px #a855f7, 0 0 16px #a855f755",
     active: "0 0 0 2px #10b981, 0 0 16px #10b98155",
   },
+  node: {
+    fill: "#1e293b", // slate-800
+    stroke: "#475569", // slate-600
+    text: "#e2e8f0", // slate-200
+    visit: "#10b981", // emerald-500 — currently visiting
+    edge: "#64748b", // slate-500
+    edgeActive: "#f59e0b", // amber-500 — pointer just changed
+  },
 } as const;

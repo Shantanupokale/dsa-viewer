@@ -178,7 +178,8 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 1a | Go sequence family (stack/queue/deque/string) + multi-structure scene | ✅ done |
 | 1b | Java tracer (`package dsaviz`) + `java.Dockerfile` + `language:"java"` | ✅ done |
 | 1c | C++ header-only tracer + `cpp.Dockerfile` + `language:"cpp"` | ✅ done |
-| 2 | LinkedList + `NodeLinkScene` + Layout Engine; recursion auto-instrumentation + CallStackPanel | ⬜ |
+| 2a | Go `LinkedList` + `NodeLinkScene` + linear Layout Engine | ✅ done |
+| 2b | Recursion auto-instrumentation + CallStackPanel; Java/C++ LinkedList parity | ⬜ next |
 | 3 | Trees + Graphs (hierarchical + force-directed layouts) | ⬜ |
 | 4 | DP tables (`TableScene`, dependency arrows) | ⬜ |
 | 5 | Segment/Fenwick/sparse tree, trie, heap; Camera system if graphs get large | ⬜ |

@@ -258,7 +258,44 @@ int main() {
 }
 `;
 
+const REVERSE_LIST_GO = `package main
+
+import "dsaviz/tracer"
+
+func main() {
+	ll := tracer.NewLinkedList("list")
+
+	// Build 1 -> 2 -> 3 -> 4 -> 5
+	var ids []string
+	for _, v := range []int{1, 2, 3, 4, 5} {
+		ids = append(ids, ll.NewNode(v))
+	}
+	for i := 0; i+1 < len(ids); i++ {
+		ll.SetNext(ids[i], ids[i+1])
+	}
+
+	// Reverse the list in place, flipping each next pointer.
+	prev := ""
+	cur := ids[0]
+	for cur != "" {
+		ll.Visit(cur)
+		next := ll.NextOf(cur)
+		ll.SetNext(cur, prev)
+		prev = cur
+		cur = next
+	}
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
+  {
+    id: "reverse-linked-list",
+    displayName: "Reverse linked list (Go)",
+    language: "go",
+    primaryPlugin: "node-link",
+    secondaryPanels: ["variables"],
+    defaultCode: REVERSE_LIST_GO,
+  },
   {
     id: "bubble-sort",
     displayName: "Bubble sort (Go)",
