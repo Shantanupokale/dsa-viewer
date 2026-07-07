@@ -1,0 +1,13 @@
+# Keep the Go image build context tiny — only tracer-go + entrypoint are needed.
+node_modules
+**/node_modules
+.git
+**/dist
+**/.turbo
+**/coverage
+apps
+infra
+packages/trace-schema
+packages/tracer-java
+packages/tracer-cpp
+*.md
