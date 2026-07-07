@@ -26,3 +26,5 @@ packages/tracer-cpp/*.o
 .vscode/
 .idea/
 *.log
+
+CLAUDE.MD
