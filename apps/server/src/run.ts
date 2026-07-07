@@ -107,12 +107,18 @@ export async function runCode(req: RunInput, config: Config): Promise<RunResult>
     };
   }
   if (sandbox.exitCode !== 0) {
+    // 137 = SIGKILL — with our cgroup limits this is almost always the 256MB memory
+    // cap (OOM kill), so say that instead of a bare exit code.
+    const fallback =
+      sandbox.exitCode === 137
+        ? "Program was killed — it likely exceeded the 256MB memory limit."
+        : `Program exited with code ${sandbox.exitCode}.`;
     return {
       status: "runtime_error",
       events, // events captured before the crash
       stdout,
       durationMs: sandbox.durationMs,
-      error: truncate(sandbox.stderr.trim() || `Program exited with code ${sandbox.exitCode}.`),
+      error: truncate(sandbox.stderr.trim() || fallback),
     };
   }
   return { status: "success", events, stdout, durationMs: sandbox.durationMs };

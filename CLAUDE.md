@@ -85,6 +85,11 @@ dsa-visualizer/
   ARCHITECTURE.md   architecture blueprint (read first)
 ```
 
+**NFR verification status (all four verified):** NFR1 scrub 50k events — seek p95 0.10ms
+(benchmark lives at `apps/web/src/player/playerStore.test.ts`, runs in `npm test`);
+NFR2 10s wall-clock kill — verified; NFR3 256MB OOM kill (exit 137 → friendly message) —
+verified; NFR4 no network — verified. Real-pipeline 50k trace: ~1.3s wall, 4.4MB payload.
+
 Phase-0 notes worth knowing:
 - **Editor is a plain textarea, not Monaco** — Monaco's value is highlighting `codeLine`,
   which the tracer doesn't emit yet. Deferred (it also dragged a DOMPurify CVE chain).
@@ -186,6 +191,7 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 4 | DP tables — `DPTable` tracer + `TableScene` + dependency arrows | ✅ done |
 | 5a | Heap (`HeapScene`, sift swaps animate) + Trie (via node-link tree layout) | ✅ done |
 | 5b | Segment/Fenwick/sparse tree; Camera system if graphs get large | ⬜ |
+| M10 | Perf/safety verification — NFR1 + NFR3 benchmarked and enforced | ✅ done |
 | 6 | Session sharing; swap Explanation provider for LLM-backed | ⬜ |
 
 **Explanation Engine is deferred** — not in the critical path right now. Keep the
