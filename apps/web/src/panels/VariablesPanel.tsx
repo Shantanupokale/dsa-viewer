@@ -69,6 +69,12 @@ function describe(e: TraceEvent): string {
       return `Set ${e.payload.nodeId}.next → ${e.payload.targetNodeId ?? "null"}.`;
     case "linkedlist_traverse":
       return `Visit node ${e.payload.nodeId}.`;
+    case "call_push": {
+      const args = Object.entries(e.payload.args).map(([k, v]) => `${k}=${fmt(v)}`).join(", ");
+      return `Call ${e.payload.functionName}(${args}).`;
+    }
+    case "call_return":
+      return `Return from ${e.payload.functionName}.`;
     default:
       return e.type;
   }

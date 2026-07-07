@@ -287,6 +287,32 @@ func main() {
 }
 `;
 
+const FIB_MEMO_GO = `package main
+
+import "dsaviz/tracer"
+
+var memo *tracer.Array
+
+// One line auto-instruments the call stack — no manual push/return.
+func fib(n int) int {
+	defer tracer.Enter("fib", map[string]any{"n": n})()
+	if n < 2 {
+		return n
+	}
+	if v := memo.Get(n); v != 0 {
+		return v
+	}
+	r := fib(n-1) + fib(n-2)
+	memo.Set(n, r)
+	return r
+}
+
+func main() {
+	memo = tracer.NewArray("memo", make([]int, 11))
+	fib(10)
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "reverse-linked-list",
@@ -295,6 +321,14 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "node-link",
     secondaryPanels: ["variables"],
     defaultCode: REVERSE_LIST_GO,
+  },
+  {
+    id: "fibonacci-memo",
+    displayName: "Fibonacci — memoized + recursion (Go)",
+    language: "go",
+    primaryPlugin: "sequence",
+    secondaryPanels: ["variables", "call-stack"],
+    defaultCode: FIB_MEMO_GO,
   },
   {
     id: "bubble-sort",

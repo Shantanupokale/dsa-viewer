@@ -30,12 +30,14 @@ type envelope struct {
 	Type        string         `json:"type"`
 	StructureID string         `json:"structureId"`
 	Payload     map[string]any `json:"payload"`
+	CallDepth   *int           `json:"callDepth,omitempty"` // set only inside a call frame
 }
 
 var (
 	mu    sync.Mutex
 	step  int
-	names = map[string]int{} // for structureId collision auto-suffixing
+	depth int                  // current recursion depth (active call frames)
+	names = map[string]int{}   // for structureId collision auto-suffixing
 )
 
 // register returns a unique structureId for name, auto-suffixing collisions
@@ -58,6 +60,10 @@ func register(name string) string {
 func emit(eventType, structureID string, payload map[string]any) {
 	mu.Lock()
 	e := envelope{Step: step, Type: eventType, StructureID: structureID, Payload: payload}
+	if depth > 0 {
+		d := depth
+		e.CallDepth = &d
+	}
 	step++
 	mu.Unlock()
 
@@ -296,4 +302,24 @@ func (l *LinkedList) NextOf(nodeID string) string { return l.next[nodeID] }
 // Visit highlights nodeId as the current traversal position (emits linkedlist_traverse).
 func (l *LinkedList) Visit(nodeID string) {
 	emit("linkedlist_traverse", l.id, map[string]any{"nodeId": nodeID})
+}
+
+// Enter auto-instruments a function for the call-stack view. Write one line at the top
+// of a recursive function:
+//
+//	defer tracer.Enter("fib", map[string]any{"n": n})()
+//
+// It emits call_push on entry and call_return when the deferred call runs (any exit
+// path), and maintains callDepth on every event emitted in between. Zero manual calls.
+func Enter(funcName string, args map[string]any) func() {
+	emit("call_push", "callstack", map[string]any{"functionName": funcName, "args": args})
+	mu.Lock()
+	depth++
+	mu.Unlock()
+	return func() {
+		mu.Lock()
+		depth--
+		mu.Unlock()
+		emit("call_return", "callstack", map[string]any{"functionName": funcName, "returnValue": nil})
+	}
 }

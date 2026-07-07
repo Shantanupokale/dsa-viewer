@@ -7,6 +7,7 @@ import { InputPanel } from "./editor/InputPanel";
 import { PlayerControls } from "./player/PlayerControls";
 import { usePlayer } from "./player/playerStore";
 import type { SceneProps } from "./plugins/types";
+import { CallStackPanel } from "./panels/CallStackPanel";
 import { VariablesPanel } from "./panels/VariablesPanel";
 import { algorithms, getAlgorithm } from "./registry/algorithms";
 import { getPlugin } from "./registry/plugins";
@@ -63,6 +64,7 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
   const recipe = recipeFor(plugin, currentEvent?.type ?? null);
   const state = materialize(currentStep);
   const Renderer = plugin?.renderer as ComponentType<SceneProps<unknown>> | undefined;
+  const hasCalls = events.some((e) => e.type === "call_push");
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-slate-200">
@@ -103,6 +105,7 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
           </div>
           <PlayerControls />
           <VariablesPanel />
+          {hasCalls && <CallStackPanel />}
           {result && result.status !== "success" && (
             <div className="rounded-lg border border-red-900 bg-red-950/50 p-3 text-sm">
               <div className="font-semibold text-red-300">{statusLabel(result.status)}</div>
