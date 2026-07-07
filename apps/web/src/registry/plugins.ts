@@ -1,3 +1,4 @@
+import { heapPlugin } from "../plugins/heap";
 import { nodeLinkPlugin } from "../plugins/nodelink";
 import { sequencePlugin } from "../plugins/sequence";
 import { tablePlugin } from "../plugins/table";
@@ -10,6 +11,7 @@ export const plugins: Record<string, VisualizationPlugin> = {
   [sequencePlugin.name]: sequencePlugin as unknown as VisualizationPlugin,
   [nodeLinkPlugin.name]: nodeLinkPlugin as unknown as VisualizationPlugin,
   [tablePlugin.name]: tablePlugin as unknown as VisualizationPlugin,
+  [heapPlugin.name]: heapPlugin as unknown as VisualizationPlugin,
 };
 
 export function getPlugin(name: string): VisualizationPlugin | null {

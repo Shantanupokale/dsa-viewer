@@ -424,3 +424,120 @@ func (t *DPTable) setCell(r, c, v int, deps []Cell) {
 // Rows and Cols are pure metadata — no events.
 func (t *DPTable) Rows() int { return t.rows }
 func (t *DPTable) Cols() int { return t.cols }
+
+// Heap is a traced min-heap of ints. Push and Pop run the sift themselves, emitting
+// one heap_swap per comparison-swap, so the renderer can animate every bubble-up /
+// bubble-down step without the user writing any heap logic.
+type Heap struct {
+	id   string
+	data []int
+}
+
+func NewHeap(name string) *Heap {
+	h := &Heap{id: register(name)}
+	emit("heap_init", h.id, map[string]any{"initialValues": []any{}})
+	return h
+}
+
+// Push inserts v and sifts it up (emits heap_push, then a heap_swap per step).
+func (h *Heap) Push(v int) {
+	h.data = append(h.data, v)
+	emit("heap_push", h.id, map[string]any{"value": v})
+	i := len(h.data) - 1
+	for i > 0 {
+		parent := (i - 1) / 2
+		if h.data[parent] <= h.data[i] {
+			break
+		}
+		h.data[parent], h.data[i] = h.data[i], h.data[parent]
+		emit("heap_swap", h.id, map[string]any{"indexA": parent, "indexB": i})
+		i = parent
+	}
+}
+
+// Pop removes and returns the min (emits heap_extract, then a heap_swap per sift-down step).
+func (h *Heap) Pop() int {
+	n := len(h.data)
+	top := h.data[0]
+	h.data[0] = h.data[n-1]
+	h.data = h.data[:n-1]
+	emit("heap_extract", h.id, map[string]any{"value": top})
+	i := 0
+	for {
+		l, r, smallest := 2*i+1, 2*i+2, i
+		if l < len(h.data) && h.data[l] < h.data[smallest] {
+			smallest = l
+		}
+		if r < len(h.data) && h.data[r] < h.data[smallest] {
+			smallest = r
+		}
+		if smallest == i {
+			break
+		}
+		h.data[i], h.data[smallest] = h.data[smallest], h.data[i]
+		emit("heap_swap", h.id, map[string]any{"indexA": i, "indexB": smallest})
+		i = smallest
+	}
+	return top
+}
+
+func (h *Heap) Len() int    { return len(h.data) }
+func (h *Heap) Empty() bool { return len(h.data) == 0 }
+
+// Trie is a traced prefix tree over lowercase words. Insert creates missing child
+// nodes (emitting trie_insert each) and Search walks the path (emitting trie_visit).
+type Trie struct {
+	id       string
+	count    int
+	children map[string]map[byte]string // nodeId -> char -> childId
+}
+
+func NewTrie(name string) *Trie {
+	t := &Trie{id: register(name), children: map[string]map[byte]string{}}
+	root := t.id + "_root"
+	t.children[root] = map[byte]string{}
+	emit("trie_insert", t.id, map[string]any{"nodeId": root, "char": "•", "parentNodeId": nil})
+	return t
+}
+
+func (t *Trie) root() string { return t.id + "_root" }
+
+// Insert adds word to the trie, emitting trie_insert for each newly created node and
+// trie_visit for nodes already on the path. The final node is marked isWordEnd.
+func (t *Trie) Insert(word string) {
+	cur := t.root()
+	for i := 0; i < len(word); i++ {
+		c := word[i]
+		if child, ok := t.children[cur][c]; ok {
+			emit("trie_visit", t.id, map[string]any{"nodeId": child})
+			cur = child
+			continue
+		}
+		t.count++
+		child := fmt.Sprintf("%s_n%d", t.id, t.count)
+		t.children[cur][c] = child
+		t.children[child] = map[byte]string{}
+		emit("trie_insert", t.id, map[string]any{
+			"nodeId":       child,
+			"char":         string(c),
+			"parentNodeId": cur,
+			"isWordEnd":    i == len(word)-1,
+		})
+		cur = child
+	}
+}
+
+// Search walks word's path, emitting trie_visit per matched node; returns whether the
+// full path exists.
+func (t *Trie) Search(word string) bool {
+	cur := t.root()
+	for i := 0; i < len(word); i++ {
+		child, ok := t.children[cur][word[i]]
+		if !ok {
+			return false
+		}
+		emit("trie_visit", t.id, map[string]any{"nodeId": child})
+		cur = child
+	}
+	return true
+}

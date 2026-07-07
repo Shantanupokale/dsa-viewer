@@ -19,6 +19,8 @@ export const nodeLinkPlugin: VisualizationPlugin<NodeLinkState> = {
     "node_visit",
     "edge_traverse",
     "backtrack",
+    "trie_insert",
+    "trie_visit",
   ],
   emptyState: NODELINK_EMPTY,
   reduce: nodeLinkReduce,
@@ -31,5 +33,7 @@ export const nodeLinkPlugin: VisualizationPlugin<NodeLinkState> = {
     graph_add_edge: { durationMs: 300, easing: "easeInOut", transitionType: "move" },
     node_visit: { durationMs: 300, easing: "easeInOut", transitionType: "glow" },
     edge_traverse: { durationMs: 350, easing: "easeInOut", transitionType: "move" },
+    trie_insert: { durationMs: 300, easing: "easeInOut", transitionType: "scale" },
+    trie_visit: { durationMs: 250, easing: "easeInOut", transitionType: "glow" },
   },
 };

@@ -184,7 +184,8 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 3a | Trees — `Graph`/`Tree` tracer + hierarchical (d3-hierarchy) layout | ✅ done |
 | 3b | Graphs — force-directed (d3-force) layout + BFS | ✅ done |
 | 4 | DP tables — `DPTable` tracer + `TableScene` + dependency arrows | ✅ done |
-| 5 | Segment/Fenwick/sparse tree, trie, heap; Camera system if graphs get large | ⬜ |
+| 5a | Heap (`HeapScene`, sift swaps animate) + Trie (via node-link tree layout) | ✅ done |
+| 5b | Segment/Fenwick/sparse tree; Camera system if graphs get large | ⬜ |
 | 6 | Session sharing; swap Explanation provider for LLM-backed | ⬜ |
 
 **Explanation Engine is deferred** — not in the critical path right now. Keep the

@@ -168,6 +168,8 @@ const EVENTS = [
   event("segtree_query", z.object({ left: z.number().int().nonnegative(), right: z.number().int().nonnegative(), result: anyValue.optional() })),
   event("segtree_update", z.object({ index: z.number().int().nonnegative(), value: anyValue })),
 
+  event("heap_init", z.object({ initialValues: z.array(anyValue) })),
+  event("heap_push", z.object({ value: anyValue })),
   event("heap_swap", z.object({ indexA: z.number().int().nonnegative(), indexB: z.number().int().nonnegative() })),
   // provisional
   event("heap_extract", z.object({ value: anyValue })),

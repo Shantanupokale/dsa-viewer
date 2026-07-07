@@ -111,6 +111,27 @@ export function nodeLinkReduce(state: NodeLinkState, event: TraceEvent): NodeLin
         visiting: event.payload.toNodeId,
       };
 
+    // ---- trie (tree layout, nodes labeled by char) ----
+    case "trie_insert": {
+      const { nodeId, char, parentNodeId } = event.payload;
+      if (state.nodes[nodeId]) return state;
+      const isRoot = parentNodeId === null || parentNodeId === undefined;
+      const base = isRoot ? { ...NODELINK_EMPTY, layout: "tree" as const } : clearHighlights(state);
+      return {
+        ...base,
+        order: [...base.order, nodeId],
+        nodes: { ...base.nodes, [nodeId]: { id: nodeId, value: char } },
+        edges: isRoot ? base.edges : [...base.edges, { from: parentNodeId, to: nodeId }],
+        visiting: nodeId,
+      };
+    }
+
+    case "trie_visit": {
+      const prev = state.visiting;
+      const visited = prev && !state.visited.includes(prev) ? [...state.visited, prev] : state.visited;
+      return { ...clearHighlights(state), visiting: event.payload.nodeId, visited };
+    }
+
     default:
       return state;
   }

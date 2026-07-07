@@ -61,6 +61,8 @@ const VALID: Record<EventType, Record<string, unknown>> = {
   segtree_build: { size: 8 },
   segtree_query: { left: 0, right: 3, result: 10 },
   segtree_update: { index: 2, value: 5 },
+  heap_init: { initialValues: [3, 1, 4] },
+  heap_push: { value: 2 },
   heap_swap: { indexA: 0, indexB: 2 },
   heap_extract: { value: 9 },
   call_push: { functionName: "solve", args: { i: 0 } },
@@ -116,6 +118,8 @@ const INVALID: Record<EventType, Record<string, unknown>> = {
   segtree_build: { size: "8" },
   segtree_query: { left: 0, right: -3 },
   segtree_update: { index: -2, value: 5 },
+  heap_init: { initialValues: "not-an-array" },
+  heap_push: { value: 2, __brokenStep: true },
   heap_swap: { indexA: 0.5, indexB: 2 },
   heap_extract: { value: 9, __brokenStep: true },
   call_push: { functionName: "", args: {} },
@@ -128,7 +132,7 @@ const ENVELOPE_BROKEN = new Set<EventType>([
   "stack_push", "stack_pop", "stack_peek",
   "queue_enqueue", "queue_dequeue", "queue_peek",
   "deque_push_front", "deque_push_back", "deque_pop_front", "deque_pop_back",
-  "heap_extract",
+  "heap_push", "heap_extract",
 ]);
 
 describe("event type coverage", () => {

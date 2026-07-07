@@ -413,6 +413,46 @@ func main() {
 }
 `;
 
+const HEAP_SORT_GO = `package main
+
+import (
+	"fmt"
+
+	"dsaviz/tracer"
+)
+
+// Heap sort via a traced min-heap: push everything, pop in sorted order.
+// Every sift-up/sift-down swap animates in the tree.
+func main() {
+	h := tracer.NewHeap("heap")
+	for _, v := range []int{7, 3, 9, 1, 5, 8, 2} {
+		h.Push(v)
+	}
+	for !h.Empty() {
+		fmt.Println(h.Pop())
+	}
+}
+`;
+
+const TRIE_GO = `package main
+
+import (
+	"fmt"
+
+	"dsaviz/tracer"
+)
+
+// Build a trie from words sharing prefixes, then search it.
+func main() {
+	tr := tracer.NewTrie("trie")
+	for _, w := range []string{"cat", "car", "card", "dog", "do"} {
+		tr.Insert(w)
+	}
+	fmt.Println("card:", tr.Search("card"))
+	fmt.Println("cab:", tr.Search("cab"))
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "reverse-linked-list",
@@ -453,6 +493,22 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "table",
     secondaryPanels: ["variables"],
     defaultCode: KNAPSACK_GO,
+  },
+  {
+    id: "heap-sort",
+    displayName: "Heap sort — min-heap (Go)",
+    language: "go",
+    primaryPlugin: "heap",
+    secondaryPanels: ["variables"],
+    defaultCode: HEAP_SORT_GO,
+  },
+  {
+    id: "trie-words",
+    displayName: "Trie — insert & search (Go)",
+    language: "go",
+    primaryPlugin: "node-link",
+    secondaryPanels: ["variables"],
+    defaultCode: TRIE_GO,
   },
   {
     id: "bubble-sort",

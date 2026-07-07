@@ -87,6 +87,20 @@ function describe(e: TraceEvent): string {
       const deps = e.payload.dependsOn?.map((d) => `dp[${d.row}][${d.col}]`).join(", ");
       return `Write ${fmt(e.payload.newValue)} to dp[${e.payload.row}][${e.payload.col}]${deps ? ` (from ${deps})` : ""}.`;
     }
+    case "heap_init":
+      return `Create a min-heap.`;
+    case "heap_push":
+      return `Push ${fmt(e.payload.value)} into the heap.`;
+    case "heap_swap":
+      return `Sift: swap positions ${e.payload.indexA} and ${e.payload.indexB}.`;
+    case "heap_extract":
+      return `Extract min ${fmt(e.payload.value)} from the top.`;
+    case "trie_insert":
+      return e.payload.parentNodeId == null
+        ? `Create trie root.`
+        : `Insert '${e.payload.char}' under ${e.payload.parentNodeId}${e.payload.isWordEnd ? " (word end)" : ""}.`;
+    case "trie_visit":
+      return `Follow existing node ${e.payload.nodeId}.`;
     case "call_push": {
       const args = Object.entries(e.payload.args).map(([k, v]) => `${k}=${fmt(v)}`).join(", ");
       return `Call ${e.payload.functionName}(${args}).`;
