@@ -9,8 +9,14 @@ import { usePlayer } from "./player/playerStore";
 import type { SceneProps } from "./plugins/types";
 import { CallStackPanel } from "./panels/CallStackPanel";
 import { VariablesPanel } from "./panels/VariablesPanel";
-import { algorithms, getAlgorithm } from "./registry/algorithms";
+import { algorithms, getAlgorithm, type Language } from "./registry/algorithms";
 import { getPlugin } from "./registry/plugins";
+
+const LANGUAGES: Array<{ id: Language; label: string }> = [
+  { id: "go", label: "Go" },
+  { id: "java", label: "Java" },
+  { id: "cpp", label: "C++" },
+];
 
 export default function App() {
   // null = still probing the existing session; avoids a login-screen flash on reload.
@@ -28,6 +34,7 @@ export default function App() {
 }
 
 function Studio({ onUnauth }: { onUnauth: () => void }) {
+  const [language, setLanguage] = useState<Language>("go");
   const [algoId, setAlgoId] = useState(algorithms[0]!.id);
   const algo = getAlgorithm(algoId)!;
   const [code, setCode] = useState(algo.defaultCode);
@@ -35,6 +42,8 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
   const [instrument, setInstrument] = useState(algo.instrument ?? false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
+
+  const examples = algorithms.filter((a) => a.language === language);
 
   const load = usePlayer((s) => s.load);
   const reset = usePlayer((s) => s.reset);
@@ -54,11 +63,17 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
     reset();
   }
 
+  function selectLanguage(lang: Language) {
+    setLanguage(lang);
+    const first = algorithms.find((a) => a.language === lang);
+    if (first) selectAlgo(first.id);
+  }
+
   async function visualize() {
     setRunning(true);
     setResult(null);
     reset();
-    const res = await runCode({ language: algo.language, code, input, instrument });
+    const res = await runCode({ language, code, input, instrument });
     setResult(res);
     setRunning(false);
     if (res.status === "error" && res.error === "unauthorized") {
@@ -82,14 +97,28 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
       <header className="flex items-center gap-3 border-b border-slate-800 px-4 py-3">
         <h1 className="text-base font-semibold text-slate-100">DSA Visualizer</h1>
         <span className="rounded bg-slate-800 px-2 py-0.5 text-xs text-slate-400">Phase 0 · Go arrays</span>
+        <div className="ml-auto flex overflow-hidden rounded-md border border-slate-700">
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.id}
+              onClick={() => selectLanguage(l.id)}
+              className={`px-3 py-1 text-sm transition-colors ${
+                language === l.id ? "bg-sky-600 text-white" : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
         <select
-          className="ml-auto rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm"
+          className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm"
           value={algoId}
           onChange={(e) => selectAlgo(e.target.value)}
         >
-          {algorithms.map((a) => (
+          {examples.map((a) => (
             <option key={a.id} value={a.id}>
-              {a.displayName}
+              {/* language suffix is redundant next to the picker */}
+              {a.displayName.replace(/\s*\((Go|Java|C\+\+)\)$/, "")}
             </option>
           ))}
         </select>
@@ -102,9 +131,9 @@ function Studio({ onUnauth }: { onUnauth: () => void }) {
         {/* Left: editor + input */}
         <section className="flex min-h-[70vh] flex-col gap-3">
           <div className="flex-1">
-            <CodeEditor value={code} onChange={setCode} language={algo.language} />
+            <CodeEditor value={code} onChange={setCode} language={language} />
           </div>
-          {algo.language === "go" && (
+          {language === "go" && (
             <label className="flex items-center gap-2 text-xs text-slate-400">
               <input
                 type="checkbox"
