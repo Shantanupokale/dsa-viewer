@@ -40,6 +40,10 @@ const LANGS: Partial<Record<Language, LangConfig>> = {
     image: "dsa-run-java:0.1.0",
     files: (code, input) => ({ "Main.java": code, "input.txt": input }),
   },
+  cpp: {
+    image: "dsa-run-cpp:0.1.0",
+    files: (code, input) => ({ "main.cpp": code, "input.txt": input }),
+  },
 };
 
 const COMPILE_FAILED_EXIT = 20; // matches docker/scripts/run.sh

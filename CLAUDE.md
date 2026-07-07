@@ -78,8 +78,8 @@ dsa-visualizer/
     trace-schema/   ✅ TS types + zod validators (the contract)
     tracer-go/      ✅ Go tracer SDK — Array + Stack/Queue/Deque/String
     tracer-java/    ✅ Java tracer SDK (package dsaviz) — same sequence family
-    tracer-cpp/     C++ header-only tracer SDK (Phase 1c)      — placeholder
-  docker/           ✅ go.Dockerfile + java.Dockerfile (cpp: Phase 1c)
+    tracer-cpp/     ✅ C++ header-only tracer SDK — same sequence family
+  docker/           ✅ go + java + cpp Dockerfiles
   infra/            fly.toml etc. (later)                      — placeholder
   PRD.md            product requirements (authoritative)
   ARCHITECTURE.md   architecture blueprint (read first)
@@ -125,6 +125,7 @@ Requires Docker running.
 npm install
 docker build -f docker/go.Dockerfile   -t dsa-run-go:0.1.0   .
 docker build -f docker/java.Dockerfile -t dsa-run-java:0.1.0 .   # Java solutions: class MUST be named Main
+docker build -f docker/cpp.Dockerfile  -t dsa-run-cpp:0.1.0  .   # C++ solutions: #include "tracer.hpp"
 
 # Build the packages the apps import
 npm run build -w @dsa/trace-schema -w @dsa/server
@@ -176,7 +177,7 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 0 | Go `Array` tracer + `go.Dockerfile` + server `/api/run` + `SequenceScene` (arrays) + Zustand player — one language, end to end | ✅ done |
 | 1a | Go sequence family (stack/queue/deque/string) + multi-structure scene | ✅ done |
 | 1b | Java tracer (`package dsaviz`) + `java.Dockerfile` + `language:"java"` | ✅ done |
-| 1c | C++ header-only tracer + `cpp.Dockerfile` + `language:"cpp"` | ⬜ next |
+| 1c | C++ header-only tracer + `cpp.Dockerfile` + `language:"cpp"` | ✅ done |
 | 2 | LinkedList + `NodeLinkScene` + Layout Engine; recursion auto-instrumentation + CallStackPanel | ⬜ |
 | 3 | Trees + Graphs (hierarchical + force-directed layouts) | ⬜ |
 | 4 | DP tables (`TableScene`, dependency arrows) | ⬜ |

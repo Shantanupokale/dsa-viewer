@@ -231,6 +231,33 @@ public class Main {
 }
 `;
 
+const BUBBLE_SORT_CPP = `#include "tracer.hpp"
+
+int main() {
+    tracer::Array arr("nums", {5, 2, 9, 1, 5, 6});
+    int n = arr.len();
+    for (int i = 0; i < n - 1; i++)
+        for (int j = 0; j < n - 1 - i; j++)
+            if (arr.get(j) > arr.get(j + 1))
+                arr.swap(j, j + 1);
+    return 0;
+}
+`;
+
+const NEXT_GREATER_CPP = `#include "tracer.hpp"
+
+int main() {
+    tracer::Array arr("nums", {2, 1, 5, 3, 6, 4});
+    tracer::Stack stack("stack");
+    for (int i = 0; i < arr.len(); i++) {
+        int x = arr.get(i);
+        while (!stack.empty() && stack.peek() < x) stack.pop();
+        stack.push(x);
+    }
+    return 0;
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "bubble-sort",
@@ -287,6 +314,22 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "sequence",
     secondaryPanels: ["variables"],
     defaultCode: NEXT_GREATER_JAVA,
+  },
+  {
+    id: "bubble-sort-cpp",
+    displayName: "Bubble sort (C++)",
+    language: "cpp",
+    primaryPlugin: "sequence",
+    secondaryPanels: ["variables"],
+    defaultCode: BUBBLE_SORT_CPP,
+  },
+  {
+    id: "next-greater-element-cpp",
+    displayName: "Next greater element — stack (C++)",
+    language: "cpp",
+    primaryPlugin: "sequence",
+    secondaryPanels: ["variables"],
+    defaultCode: NEXT_GREATER_CPP,
   },
 ];
 
