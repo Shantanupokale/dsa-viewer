@@ -365,3 +365,62 @@ func (g *Graph) Visit(id string) {
 func (g *Graph) TraverseEdge(from, to string) {
 	emit("edge_traverse", g.id, map[string]any{"fromNodeId": from, "toNodeId": to})
 }
+
+// Cell addresses a DP-table cell, used to declare dependencies in SetWithDeps.
+type Cell struct{ Row, Col int }
+
+// DPTable is a traced rows×cols table of ints for dynamic programming. Reads and
+// writes are visualized; SetWithDeps also draws dependency arrows from the source
+// cells into the newly written cell.
+type DPTable struct {
+	id   string
+	rows int
+	cols int
+	data [][]int
+}
+
+func NewDPTable(name string, rows, cols int) *DPTable {
+	id := register(name)
+	data := make([][]int, rows)
+	for i := range data {
+		data[i] = make([]int, cols)
+	}
+	emit("dp_init", id, map[string]any{"rows": rows, "cols": cols})
+	return &DPTable{id: id, rows: rows, cols: cols, data: data}
+}
+
+// Get reads cell (r, c) and emits dp_cell_read.
+func (t *DPTable) Get(r, c int) int {
+	v := t.data[r][c]
+	emit("dp_cell_read", t.id, map[string]any{"row": r, "col": c, "value": v})
+	return v
+}
+
+// Set writes v at (r, c) and emits dp_cell_write.
+func (t *DPTable) Set(r, c, v int) {
+	t.setCell(r, c, v, nil)
+}
+
+// SetWithDeps writes v at (r, c), recording which cells it was derived from —
+// the renderer draws arrows from each dep into (r, c).
+func (t *DPTable) SetWithDeps(r, c, v int, deps []Cell) {
+	t.setCell(r, c, v, deps)
+}
+
+func (t *DPTable) setCell(r, c, v int, deps []Cell) {
+	old := t.data[r][c]
+	t.data[r][c] = v
+	payload := map[string]any{"row": r, "col": c, "oldValue": old, "newValue": v}
+	if len(deps) > 0 {
+		ds := make([]map[string]any, len(deps))
+		for i, d := range deps {
+			ds[i] = map[string]any{"row": d.Row, "col": d.Col}
+		}
+		payload["dependsOn"] = ds
+	}
+	emit("dp_cell_write", t.id, payload)
+}
+
+// Rows and Cols are pure metadata — no events.
+func (t *DPTable) Rows() int { return t.rows }
+func (t *DPTable) Cols() int { return t.cols }

@@ -183,7 +183,7 @@ Plugin + registry contracts live in PRD §10. Renderer lifecycle is always
 | 2c | Java/C++ LinkedList + recursion parity | ⬜ |
 | 3a | Trees — `Graph`/`Tree` tracer + hierarchical (d3-hierarchy) layout | ✅ done |
 | 3b | Graphs — force-directed (d3-force) layout + BFS | ✅ done |
-| 4 | DP tables (`TableScene`, dependency arrows) | ⬜ |
+| 4 | DP tables — `DPTable` tracer + `TableScene` + dependency arrows | ✅ done |
 | 5 | Segment/Fenwick/sparse tree, trie, heap; Camera system if graphs get large | ⬜ |
 | 6 | Session sharing; swap Explanation provider for LLM-backed | ⬜ |
 

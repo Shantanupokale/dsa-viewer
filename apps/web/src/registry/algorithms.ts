@@ -383,6 +383,36 @@ func main() {
 }
 `;
 
+const KNAPSACK_GO = `package main
+
+import "dsaviz/tracer"
+
+// 0/1 knapsack. dp[i][w] = best value using the first i items at capacity w.
+// SetWithDeps records which cells each value came from — rendered as arrows.
+func main() {
+	weights := []int{2, 3, 4, 5}
+	values := []int{3, 4, 5, 6}
+	const W = 8
+
+	dp := tracer.NewDPTable("dp", len(weights)+1, W+1)
+	for i := 1; i <= len(weights); i++ {
+		for w := 0; w <= W; w++ {
+			skip := dp.Get(i-1, w)
+			if weights[i-1] > w {
+				dp.SetWithDeps(i, w, skip, []tracer.Cell{{Row: i - 1, Col: w}})
+				continue
+			}
+			take := dp.Get(i-1, w-weights[i-1]) + values[i-1]
+			if take > skip {
+				dp.SetWithDeps(i, w, take, []tracer.Cell{{Row: i - 1, Col: w - weights[i-1]}})
+			} else {
+				dp.SetWithDeps(i, w, skip, []tracer.Cell{{Row: i - 1, Col: w}})
+			}
+		}
+	}
+}
+`;
+
 export const algorithms: AlgorithmDescriptor[] = [
   {
     id: "reverse-linked-list",
@@ -415,6 +445,14 @@ export const algorithms: AlgorithmDescriptor[] = [
     primaryPlugin: "node-link",
     secondaryPanels: ["variables"],
     defaultCode: BFS_GO,
+  },
+  {
+    id: "knapsack",
+    displayName: "0/1 Knapsack — DP table (Go)",
+    language: "go",
+    primaryPlugin: "table",
+    secondaryPanels: ["variables"],
+    defaultCode: KNAPSACK_GO,
   },
   {
     id: "bubble-sort",

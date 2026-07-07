@@ -79,6 +79,14 @@ function describe(e: TraceEvent): string {
       return `Visit node ${e.payload.nodeId}.`;
     case "edge_traverse":
       return `Traverse edge ${e.payload.fromNodeId} → ${e.payload.toNodeId}.`;
+    case "dp_init":
+      return `Create a ${e.payload.rows}×${e.payload.cols} DP table.`;
+    case "dp_cell_read":
+      return `Read dp[${e.payload.row}][${e.payload.col}] (${fmt(e.payload.value)}).`;
+    case "dp_cell_write": {
+      const deps = e.payload.dependsOn?.map((d) => `dp[${d.row}][${d.col}]`).join(", ");
+      return `Write ${fmt(e.payload.newValue)} to dp[${e.payload.row}][${e.payload.col}]${deps ? ` (from ${deps})` : ""}.`;
+    }
     case "call_push": {
       const args = Object.entries(e.payload.args).map(([k, v]) => `${k}=${fmt(v)}`).join(", ");
       return `Call ${e.payload.functionName}(${args}).`;
