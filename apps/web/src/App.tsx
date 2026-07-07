@@ -1,6 +1,6 @@
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { recipeFor } from "./animation/animationEngine";
-import { runCode, type RunResult } from "./api/runClient";
+import { hasSession, runCode, type RunResult } from "./api/runClient";
 import { LoginGate } from "./auth/LoginGate";
 import { CodeEditor } from "./editor/CodeEditor";
 import { InputPanel } from "./editor/InputPanel";
@@ -13,7 +13,16 @@ import { algorithms, getAlgorithm } from "./registry/algorithms";
 import { getPlugin } from "./registry/plugins";
 
 export default function App() {
-  const [authed, setAuthed] = useState(false);
+  // null = still probing the existing session; avoids a login-screen flash on reload.
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void hasSession().then((ok) => setAuthed(ok));
+  }, []);
+
+  if (authed === null) {
+    return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-500">Loading…</div>;
+  }
   if (!authed) return <LoginGate onAuthed={() => setAuthed(true)} />;
   return <Studio onUnauth={() => setAuthed(false)} />;
 }

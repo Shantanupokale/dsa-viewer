@@ -4,7 +4,7 @@ import type { Config } from "./config.js";
 
 const COOKIE_NAME = "auth";
 const COOKIE_VALUE = "1";
-const SESSION_MAX_AGE_S = 60 * 60 * 8; // 8 hours
+const SESSION_MAX_AGE_S = 60 * 60 * 24 * 30; // 30 days — shared-password gate, low churn
 
 /**
  * Constant-time password check (CWE-208). Hashing both sides to a fixed-length

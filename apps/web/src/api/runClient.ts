@@ -38,6 +38,16 @@ export async function runCode(body: RunRequest): Promise<RunResult> {
   return (await res.json()) as RunResult;
 }
 
+/** GET /api/session — true when the cookie from a previous visit is still valid. */
+export async function hasSession(): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/api/session`, { credentials: "include" });
+    return res.ok;
+  } catch {
+    return false; // server down / unreachable — show the login gate
+  }
+}
+
 /** POST /api/login. Returns true on success (server sets the HttpOnly cookie). */
 export async function login(password: string): Promise<boolean> {
   const res = await fetch(`${API_BASE}/api/login`, {

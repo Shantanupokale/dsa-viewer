@@ -67,6 +67,10 @@ export function buildApp(config: Config): FastifyInstance {
     },
   );
 
+  // Lightweight session probe — lets the frontend skip the login screen when the
+  // HttpOnly cookie from a previous visit is still valid.
+  app.get("/api/session", { preHandler: requireAuth }, async () => ({ status: "ok" }));
+
   app.post("/api/logout", async (_req, reply) => {
     reply.clearCookie("auth", { path: "/" });
     return reply.send({ status: "ok" });
